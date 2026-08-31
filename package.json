@@ -1,0 +1,58 @@
+{
+	"name": "fzy-search",
+	"version": "1.0.0",
+	"description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.1 kB, no dependencies",
+	"license": "MIT",
+	"repository": "gabrielstuff/fzy-search",
+	"funding": "https://github.com/sponsors/gabrielstuff",
+	"author": {
+		"name": "Gabriel Delattre",
+		"url": "https://github.com/gabrielstuff"
+	},
+	"type": "module",
+	"exports": {
+		"types": "./index.d.ts",
+		"default": "./index.js"
+	},
+	"sideEffects": false,
+	"engines": {
+		"node": ">=18"
+	},
+	"scripts": {
+		"test": "node --test test.js",
+		"bench": "node --expose-gc bench/run.js",
+		"bench:all": "bench/all.sh"
+	},
+	"files": [
+		"index.js",
+		"index.d.ts"
+	],
+	"keywords": [
+		"fuzzy",
+		"search",
+		"filter",
+		"sort",
+		"match",
+		"matching",
+		"autocomplete",
+		"typeahead",
+		"levenshtein",
+		"damerau",
+		"transposition",
+		"accent",
+		"diacritics",
+		"unicode",
+		"highlight",
+		"client-side",
+		"browser",
+		"index"
+	],
+	"devDependencies": {
+		"esbuild": "^0.25.0",
+		"flexsearch": "^0.8.212",
+		"fuse.js": "^7.5.0",
+		"fuzzysort": "^4.0.2",
+		"match-sorter": "^8.3.0",
+		"minisearch": "^7.2.0"
+	}
+}
