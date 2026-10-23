@@ -36,7 +36,69 @@ export type SearchOptions = {
 	@default Infinity
 	*/
 	readonly limit?: number;
+
+	/**
+	A query word matches the start of a longer word (`par` finds `paris`). Turn it off when the query is expected to be complete.
+
+	@default true
+	*/
+	readonly prefix?: boolean;
+
+	/**
+	A query word matches the inside of a longer word. Never applies to words of 1-2 letters.
+
+	@default true
+	*/
+	readonly infix?: boolean;
+
+	/**
+	Upper bound on the edits forgiven per query word. The built-in budget is {@link tolerance}: 0 edits up to 3 letters, 1 up to 7, 2 beyond. `maxEdits: 1` caps the long words at 1; `maxEdits: 0` turns typo matching off.
+
+	@default Infinity
+	*/
+	readonly maxEdits?: number;
+
+	/**
+	Query words shorter than this are never edit-matched, whatever the budget says. Short words are where typo matching turns ordinary words into other ordinary words.
+
+	@default 0
+	*/
+	readonly minTypoLength?: number;
+
+	/**
+	An edit-matched word must start with the same letter as the query word. Typos rarely hit the first letter, and requiring it removes most false positives at no cost to recall.
+
+	@default false
+	*/
+	readonly keepInitial?: boolean;
+
+	/**
+	From 0 to 1: the share of a row's letters the query words must account for. `1` keeps rows the query spells out completely; it rejects `ferrandi` against `Clermont-Ferrand` (8 of 15 letters) while keeping `renned` against `Rennes`.
+
+	@default 0
+	*/
+	readonly minCoverage?: number;
+
+	/**
+	Drop rows scoring below this. The score tiers are in the readme.
+
+	@default -Infinity
+	*/
+	readonly minScore?: number;
 };
+
+/**
+How many edits are forgiven in a word of length `n` by default: 0 up to 3 letters, 1 up to 7, 2 beyond.
+
+Exported so a caller can reason about the budget it is capping.
+
+@example
+```
+tolerance(6);
+//=> 1
+```
+*/
+export function tolerance(n: number): number;
 
 /**
 Where to read the text from each row.
