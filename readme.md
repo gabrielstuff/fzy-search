@@ -83,6 +83,32 @@ Default: `Infinity`
 Maximum number of results. Worth setting: with a limit, a running top-N replaces
 the sort, which matters when a two-letter query matches 40 000 rows to show ten.
 
+#### Tuning what counts as a match
+
+The defaults suit a filter box: forgiving, as-you-type. When the same index
+answers a different question, such as "is this word a misspelling of a name in my
+list?", the other options tighten it. Each one defaults to the behaviour above,
+so passing none changes nothing.
+
+| Option | Default | Effect |
+| --- | --- | --- |
+| `prefix` | `true` | `false`: `par` no longer finds `paris`. |
+| `infix` | `true` | `false`: a query word no longer matches inside a longer word. |
+| `maxEdits` | `Infinity` | Caps the edits per word. `1` limits long words to one edit, `0` turns typos off. |
+| `minTypoLength` | `0` | Words shorter than this are never edit-matched. |
+| `keepInitial` | `false` | An edit-matched word must start with the query word's letter. |
+| `minCoverage` | `0` | `0..1`. The query must account for this share of the row's letters. |
+| `minScore` | `-Infinity` | Drop rows scoring below this. |
+
+```js
+// "Is this word a misspelling of one of these cities?"
+const cities = createIndex(['Rennes', 'Avignon', 'Clermont-Ferrand']);
+const typo = { prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8, limit: 1 };
+search('renned', cities, typo);    // Rennes
+search('aivgnon', cities, typo);   // Avignon
+search('ferrandi', cities, typo);  // nothing: it is 8 of the 15 letters of Clermont-Ferrand
+```
+
 ### highlight(query, index, i, tag?)
 
 The original string of row `i`, with the matched spans wrapped in `tag`
@@ -102,6 +128,11 @@ ranges('sicences donnes', index, hits[0].i);
 
 `{text, map}` — the folded string, plus `map[i]`, the index of that character in
 the source. Exported so you can reuse the same folding elsewhere.
+
+### tolerance(length)
+
+The default edit budget for a word of that length: 0 up to 3 letters, 1 up to 7,
+2 beyond. Exported so you can reason about the cap you pass as `maxEdits`.
 
 ### osa(a, b, tolerance)
 

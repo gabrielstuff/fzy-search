@@ -120,7 +120,29 @@ export function osa(a, b, tol) {
 }
 
 /** How many edits we forgive in a word of length n. */
-const tolerance = (n) => (n <= 3 ? 0 : n <= 7 ? 1 : 2);
+export const tolerance = (n) => (n <= 3 ? 0 : n <= 7 ? 1 : 2);
+
+/**
+ * The knobs of search(). Every default reproduces the behaviour before the
+ * knobs existed, so a caller that passes nothing sees no change.
+ * @typedef {Object} SearchOptions
+ * @property {number}  [limit=Infinity]      maximum number of results
+ * @property {boolean} [prefix=true]         a query word matches the start of a longer word
+ * @property {boolean} [infix=true]          a query word matches the inside of a longer word
+ * @property {number}  [maxEdits=Infinity]   cap on the edits forgiven per word (the default budget is 0/1/2 by length)
+ * @property {number}  [minTypoLength=0]     query words shorter than this are never edit-matched
+ * @property {boolean} [keepInitial=false]   an edit-matched word must start with the same letter as the query word
+ * @property {number}  [minCoverage=0]       0..1, share of the row's letters the query words must account for
+ * @property {number}  [minScore=-Infinity]  drop rows scoring below this
+ */
+const DEFAULTS = { limit: Infinity, prefix: true, infix: true, maxEdits: Infinity, minTypoLength: 0, keepInitial: false, minCoverage: 0, minScore: -Infinity };
+
+/** Edits forgiven for query word `q` under `o`. Always a small integer: min() against the
+ *  default `Infinity` made V8 treat the budget as a double, which slowed osa() ~1.8x. */
+const budget = (q, o) => {
+  const t = tolerance(q.length);
+  return q.length < o.minTypoLength ? 0 : t < o.maxEdits ? t : o.maxEdits | 0;
+};
 
 // --- index ----------------------------------------------------------------
 /** What to read from each entry:
@@ -183,13 +205,15 @@ export function createIndex(source, key) {
 
 // --- scoring cascade ------------------------------------------------------
 // Tiers never overlap: exact 1000 > prefix 900 > substring 800 > per-word <= 170.
-function wordScore(q, w) {
+// Runs once per vocabulary word. `tol` and the switches are resolved once per query word by
+// the caller and passed as plain arguments, not read off the options object here.
+function wordScore(q, w, tol, prefix, infix, keepInitial) {
   if (w === q) return 100;
-  if (w.length > q.length && w.startsWith(q)) return 90 - Math.min(9, w.length - q.length);
-  const at = q.length >= 3 ? w.indexOf(q) : -1;   // no infix match on 1-2 letters:
-  if (at > 0) return 70;                          // "de" must not match "monde"
-  const tol = tolerance(q.length);
+  if (prefix && w.length > q.length && w.startsWith(q)) return 90 - Math.min(9, w.length - q.length);
+  const at = infix && q.length >= 3 ? w.indexOf(q) : -1;   // no infix match on 1-2 letters:
+  if (at > 0) return 70;                                   // "de" must not match "monde"
   if (tol === 0) return 0;
+  if (keepInitial && w.charCodeAt(0) !== q.charCodeAt(0)) return 0;
   const cut = w.length > q.length + tol ? w.slice(0, q.length + tol) : w;
   const d = osa(q, cut, tol);
   return d <= tol ? 62 - 12 * d - (cut === w ? 0 : 4) : 0;
@@ -205,15 +229,15 @@ function wordScore(q, w) {
  *      edits, so a letter of `q` that the word does not contain at all costs at
  *      least one edit. More than `tol` such letters and the word is out.
  *  This is what keeps a 46 000-word vocabulary off the hot path. */
-function vocabHits(q, index) {
+function vocabHits(q, index, o = DEFAULTS) {
   const { vWord, vPost, vMask, vLen } = index;
-  const tol = tolerance(q.length);
+  const tol = budget(q, o), { prefix, infix, keepInitial } = o;
   const qMask = charMask(q), minLen = q.length - tol;
   const posts = [], scores = [];
   for (let k = 0; k < vWord.length; k++) {
     if (vLen[k] < minLen) continue;
     if (popcount(qMask & ~vMask[k]) > tol) continue;
-    const s = wordScore(q, vWord[k]);
+    const s = wordScore(q, vWord[k], tol, prefix, infix, keepInitial);
     if (s > 0) { posts.push(vPost[k]); scores.push(s); }
   }
   return { posts, scores };
@@ -233,6 +257,14 @@ function unglue(q, vocab) {
     if (vocab.has(a) && vocab.has(b)) return [a, b];
   }
   return null;
+}
+
+/** Letters and digits in row `i`: what a query has to account for to "cover" it. */
+function letters(index, i) {
+  const w = index.words[i];
+  let n = 0;
+  for (let k = 0; k < w.length; k += 2) n += w[k + 1] - w[k];
+  return n || 1;
 }
 
 /** Normalize + collapse whitespace, shared by search() and ranges(). Non-string
@@ -264,10 +296,12 @@ function substrScan(qText, index, limit) {
 
 /**
  * Fuzzy filter + sort. @param {string} query  @param {FzyIndex} index
- * @param {{ limit?: number }} [opts]
+ * @param {SearchOptions} [opts]
  * @returns {SearchResult[]}
  */
-export function search(query, index, { limit = Infinity } = {}) {
+export function search(query, index, opts = {}) {
+  const o = { ...DEFAULTS, ...opts };
+  const limit = o.limit;
   if (limit <= 0) return [];
   const qText = qNorm(query);
   if (!qText) return [];
@@ -277,9 +311,9 @@ export function search(query, index, { limit = Infinity } = {}) {
   // 1. resolve each query word against the vocabulary — once, not per row
   const qWords = [], matches = [];
   for (const q of raw) {
-    const hit = vocabHits(q, index);
+    const hit = vocabHits(q, index, o);
     const parts = hit.posts.length ? null : unglue(q, index.vocab);
-    for (const w of parts ?? [q]) { qWords.push(w); matches.push(parts ? vocabHits(w, index) : hit); }
+    for (const w of parts ?? [q]) { qWords.push(w); matches.push(parts ? vocabHits(w, index, o) : hit); }
   }
   const need = qWords.length;
   let covered = 0;
@@ -320,9 +354,9 @@ export function search(query, index, { limit = Infinity } = {}) {
     const text = index.texts[i];
     let score;
     if (text === qText) score = 1000;
-    else if (text.startsWith(qText)) score = 900;
+    else if (o.prefix && text.startsWith(qText)) score = 900;
     else {
-      const at = text.indexOf(qText);
+      const at = o.infix ? text.indexOf(qText) : -1;
       if (at > 0) score = 800 + 1 / (1 + at);        // earlier match ranks higher
       else {
         let total = 0, last = -1, ordered = true;
@@ -335,6 +369,8 @@ export function search(query, index, { limit = Infinity } = {}) {
         score = total / need + (ordered ? 30 : 0) + 40 * (covered / text.length);
       }
     }
+    if (score < o.minScore) continue;
+    if (o.minCoverage > 0 && covered / letters(index, i) < o.minCoverage) continue;
     if (capped && out.length === limit && score <= floor) continue;
     const row = { item: index.items[i], key: index.keys ? index.keys[i] : i, score, i };
     if (!capped) { out.push(row); continue; }
@@ -370,7 +406,7 @@ export function ranges(query, index, i) {
       let best = 0, span = null;
       for (let bi = 0; bi < b.length; bi += 2) {
         const off = b[bi], w = text.slice(off, b[bi + 1]);
-        const s = wordScore(q, w);
+        const s = wordScore(q, w, tolerance(q.length), true, true, false);
         if (s > best) { best = s; const k = w.indexOf(q); span = k > 0 ? [off + k, off + k + q.length] : [off, off + Math.min(w.length, q.length + 2)]; }
       }
       if (span) push(span[0], span[1]);

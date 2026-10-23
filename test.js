@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createIndex, search, normalize, osa, highlight, ranges } from './index.js';
+import { createIndex, search, normalize, osa, tolerance, highlight, ranges } from './index.js';
 
 const NAMES = [
   'Master Sciences de l’éducation parcours Recherche - Université de Lille',
@@ -226,4 +226,86 @@ test('an ungluable glued word leaks nothing', () => {
 test('createIndex rejects a non-object source', () => {
   assert.throws(() => createIndex(42, 'x'), TypeError);
   assert.throws(() => createIndex(null), TypeError);
+});
+
+// --- search options ----------------------------------------------------------
+// Every option must default to the old behaviour, and each one must do exactly
+// one thing. The city list is the case that motivated them: a typo check against
+// a list of names, where an ordinary word matching a name is the failure mode.
+// Big cities only, on purpose. Options cannot tell "renned" (a typo of Rennes) from "commerce" (a word, one
+// edit from the small town Commercy): both are 1 edit, same first letter, fully covering. What separates them is
+// the list, so a caller that wants typo matching keeps the list to names a user would actually mean.
+const CITIES = ['Rennes', 'Avignon', 'Toulouse', 'Clermont-Ferrand', 'Narbonne', 'Besançon', 'Paris'];
+const cities = createIndex(CITIES);
+const names = (q, opts) => search(q, cities, opts).map((r) => r.item);
+const TYPO = { prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8 };
+
+test('options: passing none, or the defaults, changes nothing', () => {
+  for (const q of ['sicences donnes', 'cloud', 'lille', 'cap', 'informatiquecloud']) {
+    const plain = search(q, idx);
+    const explicit = search(q, idx, { prefix: true, infix: true, maxEdits: Infinity, minTypoLength: 0, keepInitial: false, minCoverage: 0, minScore: -Infinity });
+    assert.deepEqual(explicit, plain, q);
+  }
+});
+
+test('tolerance is exported and unchanged', () => {
+  assert.deepEqual([3, 4, 7, 8].map(tolerance), [0, 1, 1, 2]);
+});
+
+test('prefix: false stops as-you-type matches', () => {
+  assert.deepEqual(names('toulou'), ['Toulouse']);
+  assert.deepEqual(names('toulou', { prefix: false, infix: false, maxEdits: 0 }), []);
+  assert.deepEqual(names('toulouse', { prefix: false, infix: false, maxEdits: 0 }), ['Toulouse']);
+});
+
+test('infix: false stops matches inside a word', () => {
+  assert.ok(names('ferrand').includes('Clermont-Ferrand'));
+  assert.ok(names('arbonn').includes('Narbonne'));
+  assert.deepEqual(names('arbonn', { infix: false, prefix: false, maxEdits: 0 }), []);
+});
+
+test('maxEdits caps the budget, 0 turns typos off', () => {
+  assert.deepEqual(names('toulousx', { prefix: false, infix: false }), ['Toulouse']);   // 1 edit, 8 letters: default budget is 2
+  assert.deepEqual(names('toulouxx', { prefix: false, infix: false, maxEdits: 1 }), []); // 2 edits, capped at 1
+  assert.deepEqual(names('toulouxx', { prefix: false, infix: false, maxEdits: 2 }), ['Toulouse']);
+  assert.deepEqual(names('renned', { prefix: false, infix: false, maxEdits: 0 }), []);
+});
+
+test('minTypoLength: short words are never edit-matched', () => {
+  assert.deepEqual(names('pariz', { prefix: false, infix: false }), ['Paris']);
+  assert.deepEqual(names('pariz', { prefix: false, infix: false, minTypoLength: 6 }), []);
+});
+
+test('keepInitial: an edit may not change the first letter', () => {
+  assert.deepEqual(names('sennes', { prefix: false, infix: false }), ['Rennes']);
+  assert.deepEqual(names('sennes', { prefix: false, infix: false, keepInitial: true }), []);
+  assert.deepEqual(names('renned', { prefix: false, infix: false, keepInitial: true }), ['Rennes']);
+});
+
+test('minCoverage: the query must account for the row', () => {
+  assert.ok(names('ferrandi', { prefix: false, infix: false }).includes('Clermont-Ferrand'));
+  assert.deepEqual(names('ferrandi', { prefix: false, infix: false, minCoverage: 0.8 }), []);
+  assert.deepEqual(names('renned', { prefix: false, infix: false, minCoverage: 0.8 }), ['Rennes']);
+});
+
+test('minScore drops weak rows and keeps the strong ones', () => {
+  const weak = search('renned', cities, { prefix: false, infix: false });
+  assert.ok(weak.length > 0);
+  assert.deepEqual(search('renned', cities, { prefix: false, infix: false, minScore: weak[0].score + 1 }), []);
+  assert.equal(search('rennes', cities, { minScore: 1000 })[0].item, 'Rennes');
+});
+
+test('the typo preset: real misspellings in, ordinary words out', () => {
+  for (const [typo, city] of [['renned', 'Rennes'], ['aivgnon', 'Avignon'], ['toumouse', 'Toulouse'], ['besanconu', 'Besançon']]) {
+    assert.deepEqual(names(typo, { ...TYPO, limit: 1 }), [city], typo);
+  }
+  // each of these is within reach of a real city (Narbonne, Paris, Clermont-Ferrand) and is an ordinary word
+  for (const word of ['sorbonne', 'commerce', 'ferrandi', 'histoire', 'parisien']) {
+    assert.deepEqual(names(word, TYPO), [], word);
+  }
+});
+
+test('options reach every word of a multi-word query', () => {
+  assert.deepEqual(names('renned avignon', { ...TYPO, minCoverage: 0 }).sort(), []);   // one row must hold all words
+  assert.deepEqual(names('clermont ferrand', { ...TYPO, minTypoLength: 0, maxEdits: 0 }), ['Clermont-Ferrand']);
 });
