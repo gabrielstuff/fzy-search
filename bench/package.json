@@ -1,0 +1,14 @@
+{
+	"name": "fzy-search-bench",
+	"private": true,
+	"description": "The benchmark contenders, kept out of the published package's own install: CI jobs that publish never install these.",
+	"type": "module",
+	"devDependencies": {
+		"esbuild": "^0.25.0",
+		"flexsearch": "^0.8.212",
+		"fuse.js": "^7.5.0",
+		"fuzzysort": "^4.0.2",
+		"match-sorter": "^8.3.0",
+		"minisearch": "^7.2.0"
+	}
+}

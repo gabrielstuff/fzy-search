@@ -1,0 +1,39 @@
+# fzy-search
+
+> Fuzzy filter and sort for client-side lists. One file of dependency-free JavaScript (ESM), about 2.6 kB gzipped, Node >= 14 and browsers. Folds accents and ligatures, counts a transposition as one edit, scales the edit budget to word length, ignores word order, and requires every query word to match. Built for a search box over a few thousand to a hundred thousand rows already in memory.
+
+Install: `npm install fzy-search`. Unreleased changes: every pull request has a preview build on pkg.pr.new, see the comment on the PR.
+
+```js
+import { createIndex, search, highlight } from 'fzy-search';
+
+const index = createIndex(rows, 'name');          // once, not per keystroke; rows: strings, objects + key, or a map
+const hits = search('sicences donnes', index, { limit: 20 });
+// [{ item, key, score, i }, ...] sorted by descending score
+highlight('sicences donnes', index, hits[0].i);   // HTML with <mark> around the matched spans
+```
+
+`search(query, index, options)` options, all optional, all defaulting to the behaviour before they existed:
+
+- `limit` (Infinity): maximum number of results.
+- `prefix` (true), `infix` (true): a query word may match the start, or the inside, of a longer word.
+- `maxEdits` (Infinity): cap on the edits forgiven per word. The built-in budget, `tolerance(n)`, is 0 up to 3 letters, 1 up to 7, 2 beyond.
+- `minTypoLength` (0): query words shorter than this are never edit-matched.
+- `keepInitial` (false): an edit-matched word must start with the query word's letter.
+- `minCoverage` (0): 0 to 1, the share of the row's letters the query words must account for.
+- `minScore` (-Infinity): drop rows scoring below this.
+
+To ask "is this word a misspelling of one of these names?" rather than filter a list, tighten it:
+`{ prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8, limit: 1 }`.
+The options cannot tell a typo from an ordinary word one edit away from a name (`commerce` and Commercy): keep the list to names a user would mean.
+
+## Docs
+
+- [README](https://github.com/gabrielstuff/fzy-search/blob/main/readme.md): usage, API, scoring, caveats
+- [Types](https://github.com/gabrielstuff/fzy-search/blob/main/index.d.ts): every export, with doc comments
+- [AGENTS.md](https://github.com/gabrielstuff/fzy-search/blob/main/AGENTS.md): how to change the code safely
+- [Benchmark results](https://github.com/gabrielstuff/fzy-search/blob/main/results.md): against five alternatives, including where it loses
+
+## Optional
+
+- [Changelog](https://github.com/gabrielstuff/fzy-search/blob/main/CHANGELOG.md)

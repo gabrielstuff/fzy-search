@@ -2,7 +2,7 @@
 
 > Fuzzy filter and sort for client-side lists
 
-2.4 kB gzipped, no dependencies (2.9 kB if you also pull in `highlight`). Built
+2.6 kB gzipped, no dependencies (3.0 kB if you also pull in `highlight`). Built
 for the search box over a list you already have in memory — a few thousand to a
 hundred thousand rows — where the user types fast, without accents, and with
 typos.
@@ -22,6 +22,10 @@ All the numbers, including the ones that do not flatter it, are in
 ```sh
 npm install fzy-search
 ```
+
+Node 14 or later, and any bundler or browser that reads ES2020. ESM only. Every pull request
+also gets a preview build, so an unreleased change can be tried before it ships; the install
+command is in a comment on the PR ([pkg.pr.new](https://pkg.pr.new)).
 
 ## Usage
 
@@ -198,7 +202,7 @@ Full method and per-shape breakdown in [results.md](results.md).
 
 | | gzip | top-1 % (real corpora) | p50 latency |
 | --- | --- | --- | --- |
-| **fzy-search** | **2.4 kB** | **93–98.5** | 2–6 ms |
+| **fzy-search** | **2.6 kB** | **93–98.5** | 2–6 ms |
 | [FlexSearch](https://github.com/nextapps-de/flexsearch) | 17 kB | 47–60 | **0.1–0.5 ms** |
 | [MiniSearch](https://github.com/lucaong/minisearch) | 5.7 kB | 80–83 | 5–36 ms |
 | [fuzzysort](https://github.com/farzher/fuzzysort) | 8.2 kB | 70–78 | 8–51 ms |
@@ -232,13 +236,22 @@ budget, the input shapes and the vocabulary prefilter each have a test that fail
 loudly. Extend `test.js` before touching a constant.
 
 ```sh
-npm test                             # unit tests
-node --expose-gc bench/run.js alpaca # one corpus
-bench/all.sh                         # the full sweep (~1 h)
+npm test                             # unit tests (Node 18+)
+npm run test:smoke                   # the dependency-free check that runs on Node 14
+npm run check:package                # publint
+npm run check:size                   # the gzipped size, against its budget
+npm run bench                        # speed and relevance of this checkout (installs the contenders first)
+npm run bench:all                    # the full sweep (~1 h)
 ```
 
 The real benchmark corpora download themselves on first use and cache under
 `bench/data/`.
+
+Commits and pull-request titles are [Conventional Commits](https://www.conventionalcommits.org):
+`feat:` ships a minor, `fix:` and `perf:` a patch, `feat!:` a major. Merges are squashes, so the title
+is the commit message, and the changelog and the next version are written from those messages — never
+edit `version` or `CHANGELOG.md` by hand. [AGENTS.md](AGENTS.md) has the rules for working on the code,
+whether you are a person or a coding agent; [.github/RELEASING.md](.github/RELEASING.md) has the release flow.
 
 ## License
 

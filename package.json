@@ -1,7 +1,7 @@
 {
 	"name": "fzy-search",
 	"version": "1.0.0",
-	"description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.1 kB, no dependencies",
+	"description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.6 kB, no dependencies",
 	"license": "MIT",
 	"repository": "gabrielstuff/fzy-search",
 	"funding": "https://github.com/sponsors/gabrielstuff",
@@ -16,12 +16,15 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=18"
+		"node": ">=14"
 	},
 	"scripts": {
 		"test": "node --test test.js",
-		"bench": "node --expose-gc bench/run.js",
-		"bench:all": "bench/all.sh"
+		"test:smoke": "node test/smoke.mjs",
+		"check:package": "publint",
+		"check:size": "node scripts/size.mjs",
+		"bench": "npm ci --prefix bench --ignore-scripts && node --expose-gc bench/run.js",
+		"bench:all": "npm ci --prefix bench --ignore-scripts && bench/all.sh"
 	},
 	"files": [
 		"index.js",
@@ -49,10 +52,7 @@
 	],
 	"devDependencies": {
 		"esbuild": "^0.25.0",
-		"flexsearch": "^0.8.212",
-		"fuse.js": "^7.5.0",
-		"fuzzysort": "^4.0.2",
-		"match-sorter": "^8.3.0",
-		"minisearch": "^7.2.0"
+		"pkg-pr-new": "^0.0.92",
+		"publint": "^0.3.25"
 	}
 }
