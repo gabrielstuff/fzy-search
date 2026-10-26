@@ -2,7 +2,7 @@
 
 # What publishes, and what decides what gets published, always goes through the owner.
 /.github/ @gabrielstuff
-/release-please-config.json @gabrielstuff
-/.release-please-manifest.json @gabrielstuff
+/cliff.toml @gabrielstuff
+/scripts/release.mjs @gabrielstuff
 /renovate.json @gabrielstuff
 /package.json @gabrielstuff

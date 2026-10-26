@@ -49,11 +49,12 @@ above on this checkout and on `main` and compare `p50`.
 
 - Commits and **PR titles** are Conventional Commits (`feat:`, `fix:`, `perf:`, `docs:`, `deps:`,
   `build:`, `ci:`, `chore:`, `refactor:`, `test:`). Merges are squashes, so the title is the commit
-  message, and `release-please` writes `CHANGELOG.md` and picks the next version from those messages.
+  message, and git-cliff writes `CHANGELOG.md` and picks the next version from those messages.
   `feat:` is a minor, `fix:`/`perf:` a patch, `feat!:` or a `BREAKING CHANGE:` footer a major.
-- **Never edit `version` in `package.json` or `CHANGELOG.md` by hand.** The release PR does both.
-- Merging the release PR tags the release; the same workflow publishes to npm with provenance. See
-  `.github/RELEASING.md`.
+- **Never edit `version` in `package.json` or `CHANGELOG.md` by hand.** The release workflow does both.
+- A release is one click: the Release workflow (`workflow_dispatch` on `main`, or `npm run release` from
+  a maintainer's machine) bumps, tags, publishes to npm with provenance, then pushes. Do not start it
+  unless asked. See `.github/RELEASING.md`.
 - Every pull request from this repository gets a preview build on pkg.pr.new (a comment on the PR has
   the install command): use it to try a change in a real project before it is merged.
 
