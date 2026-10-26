@@ -8,8 +8,9 @@ The README is the user documentation; this file is what you need to change the c
 
 ```sh
 npm test                 # test.js, node:test, Node >= 18
-npm run test:compat       # test/compat.mjs: dependency-free, runs on the oldest supported Node
-npm run check:package    # publint: exports, types, files
+npm run test:compat      # test/compat.mjs: dependency-free, runs on the oldest supported Node
+npm run check:package    # publint and attw: exports, types, files
+npm run check:types      # tsc over test/types.test-d.ts: index.d.ts cannot drift from index.js
 npm run check:size       # gzipped bundle cost against the budget in scripts/size.mjs
 npm ci                   # root install: tooling only (esbuild, publint, pkg-pr-new)
 

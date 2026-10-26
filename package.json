@@ -21,7 +21,8 @@
 	"scripts": {
 		"test": "node --test test.js",
 		"test:compat": "node test/compat.mjs",
-		"check:package": "publint",
+		"check:types": "tsc -p test",
+		"check:package": "publint && attw --pack . --profile esm-only",
 		"check:size": "node scripts/size.mjs",
 		"release": "node scripts/release.mjs",
 		"bench": "npm ci --prefix bench --ignore-scripts && node --expose-gc bench/run.js",
@@ -52,9 +53,11 @@
 		"index"
 	],
 	"devDependencies": {
+		"@arethetypeswrong/cli": "^0.18.0",
 		"esbuild": "^0.25.0",
 		"git-cliff": "^2.0.0",
 		"pkg-pr-new": "^0.0.92",
-		"publint": "^0.3.25"
+		"publint": "^0.3.25",
+		"typescript": "^5.9.0"
 	}
 }
