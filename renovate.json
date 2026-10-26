@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "description": "Renovate owns dependency version updates (npm and GitHub Actions). Dependabot is kept for security updates only, see .github/dependabot.yml: one tool opens the routine PRs, so there are never two PRs for the same bump.",
-  "extends": ["config:best-practices", ":semanticCommits", ":semanticCommitTypeAll(chore)"],
+  "extends": ["config:best-practices", ":semanticCommits", ":semanticCommitTypeAll(chore)", ":approveMajorUpdates"],
   "timezone": "Europe/Paris",
   "schedule": ["before 6am on monday"],
   "labels": ["dependencies"],

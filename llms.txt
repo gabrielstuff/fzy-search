@@ -23,6 +23,8 @@ highlight('sicences donnes', index, hits[0].i);   // HTML with <mark> around the
 - `minCoverage` (0): 0 to 1, the share of the row's letters the query words must account for.
 - `minScore` (-Infinity): drop rows scoring below this.
 
+`ranges(query, index, i)` returns the matched `[start, end)` pairs into the original string, to render the highlight yourself. The package also ships an agent skill: `skills/fzy-search/SKILL.md`.
+
 To ask "is this word a misspelling of one of these names?" rather than filter a list, tighten it:
 `{ prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8, limit: 1 }`.
 The options cannot tell a typo from an ordinary word one edit away from a name (`commerce` and Commercy): keep the list to names a user would mean.

@@ -71,6 +71,8 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run check:package
       - run: npm run check:size
+      - run: npm run check:docs
+      - run: npm run lint
       - run: npm pack --dry-run
 
   # The readme sells a client-side library, so it is not only a Node one: the same compat test runs on
