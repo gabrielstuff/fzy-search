@@ -8,7 +8,7 @@ The README is the user documentation; this file is what you need to change the c
 
 ```sh
 npm test                 # test.js, node:test, Node >= 18
-npm run test:smoke       # test/smoke.mjs: dependency-free, runs on the oldest supported Node
+npm run test:compat       # test/compat.mjs: dependency-free, runs on the oldest supported Node
 npm run check:package    # publint: exports, types, files
 npm run check:size       # gzipped bundle cost against the budget in scripts/size.mjs
 npm ci                   # root install: tooling only (esbuild, publint, pkg-pr-new)
@@ -17,7 +17,7 @@ ONLY=fzy node --expose-gc bench/run.js synthetic   # speed and relevance of this
 npm ci --prefix bench --ignore-scripts             # first, once: the benchmark contenders
 ```
 
-Before you call a change done: `npm test`, `npm run test:smoke`, `npm run check:package`,
+Before you call a change done: `npm test`, `npm run test:compat`, `npm run check:package`,
 `npm run check:size`. If you touched `search()`, `vocabHits()` or `wordScore()`, also run the bench
 above on this checkout and on `main` and compare `p50`.
 
@@ -42,7 +42,7 @@ above on this checkout and on `main` and compare `p50`.
 
 `engines.node` is `>=14`. The ceiling on syntax is ES2020 (`??` and `?.` are in; `??=`, `.at()`,
 `Object.hasOwn`, `structuredClone` are out), and `index.js` imports nothing, not even `node:` modules.
-`test.js` needs Node 18 (`node:test`), so the floor is enforced by `test/smoke.mjs` in CI on Node 14 and
+`test.js` needs Node 18 (`node:test`), so the floor is enforced by `test/compat.mjs` in CI on Node 14 and
 16: keep that file free of anything newer. Raising the floor is a breaking change: a `feat!:` commit.
 
 ## Commits, versions, releases
@@ -69,7 +69,7 @@ README. Do not edit the copy: the next copy silently reverts the edit. Send the 
 | --- | --- |
 | `index.js`, `index.d.ts` | the library, in reading order: normalize, osa, index, wordScore, vocabHits, search, highlight |
 | `test.js` | the unit tests, `node:test` |
-| `test/smoke.mjs` | the Node-14-compatible smoke test |
+| `test/compat.mjs` | the Node-14-compatible compat test |
 | `scripts/size.mjs` | bundle size and its budget |
 | `bench/` | the benchmark against five alternatives; its own `package.json` |
 | `results.md` | the recorded benchmark results, including the ones that do not flatter the library |

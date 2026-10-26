@@ -4,7 +4,7 @@
 
 1. Open a pull request. Its title is a Conventional Commit (`feat:`, `fix:`, `perf:`, …): the PR title
    check enforces it, because the title becomes the commit message on squash-merge.
-2. CI runs the suite on Node 18 to 24, the smoke test on Node 14 and 16, publint, the size budget and
+2. CI runs the suite on Node 18 to 24, the compat test on Node 14 and 16, publint, the size budget and
    `npm pack`. The Preview workflow comments an install command for the branch (pkg.pr.new).
 3. Merge. Nothing else happens: there is no release PR and no bot.
 4. To release, run **Actions, Release, Run workflow** on `main` (or `npm run release` locally). The

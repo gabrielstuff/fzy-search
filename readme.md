@@ -237,7 +237,7 @@ loudly. Extend `test.js` before touching a constant.
 
 ```sh
 npm test                             # unit tests (Node 18+)
-npm run test:smoke                   # the dependency-free check that runs on Node 14
+npm run test:compat                   # the dependency-free check that runs on Node 14
 npm run check:package                # publint
 npm run check:size                   # the gzipped size, against its budget
 npm run bench                        # speed and relevance of this checkout (installs the contenders first)

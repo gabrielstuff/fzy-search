@@ -30,12 +30,12 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       - run: npm test
-      - run: npm run test:smoke
+      - run: npm run test:compat
 
   # `engines.node` says >=14. test.js needs node:test (Node 18), so the oldest Nodes run the
-  # dependency-free smoke test instead. A syntax or built-in that raises the floor fails here.
+  # dependency-free compat test instead. A syntax or built-in that raises the floor fails here.
   min-node:
-    name: smoke (node ${{ matrix.node-version }})
+    name: compat (node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -52,7 +52,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
       # No install: the library has no dependencies, and Node 14's npm cannot read this lockfile.
-      - run: node test/smoke.mjs
+      - run: node test/compat.mjs
 
   # What would be published: the package lints clean, ships only what it should, and stays in budget.
   package:
