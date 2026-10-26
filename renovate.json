@@ -1,0 +1,44 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate owns dependency version updates (npm and GitHub Actions). Dependabot is kept for security updates only, see .github/dependabot.yml: one tool opens the routine PRs, so there are never two PRs for the same bump.",
+  "extends": ["config:best-practices", ":semanticCommits", ":semanticCommitTypeAll(chore)"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 6am on monday"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 5,
+  "minimumReleaseAge": "7 days",
+  "internalChecksFilter": "strict",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on the first day of the month"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["dependencies", "security"],
+    "minimumReleaseAge": null,
+    "schedule": ["at any time"]
+  },
+  "packageRules": [
+    {
+      "description": "Actions are pinned to a commit SHA (config:best-practices); one weekly PR for all of them.",
+      "matchManagers": ["github-actions"],
+      "groupName": "github actions",
+      "semanticCommitType": "ci",
+      "semanticCommitScope": "deps"
+    },
+    {
+      "description": "Tooling the CI uses to check and preview the package. It never ships.",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["package.json"],
+      "groupName": "dev tooling",
+      "semanticCommitScope": "deps-dev"
+    },
+    {
+      "description": "The benchmark contenders are not part of the package: monthly, and kept apart from the tooling.",
+      "matchManagers": ["npm"],
+      "matchFileNames": ["bench/package.json"],
+      "groupName": "benchmark libraries",
+      "semanticCommitScope": "bench",
+      "schedule": ["before 6am on the first day of the month"]
+    }
+  ]
+}

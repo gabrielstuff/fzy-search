@@ -24,7 +24,7 @@ The real corpora download themselves on first use — RealNest via a sparse git
 clone, French-Alpaca via HTTP — and cache under `bench/data/`.
 
 ```sh
-npm install                          # the five contenders, as devDependencies
+npm ci --prefix bench --ignore-scripts   # the five contenders, from bench/package.json
 node bench/size.js                   # bundle cost
 node --expose-gc bench/run.js alpaca # one corpus
 bench/all.sh                         # everything
