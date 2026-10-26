@@ -1,6 +1,6 @@
 {
 	"name": "fzy-search",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.6 kB, no dependencies",
 	"license": "MIT",
 	"repository": "gabrielstuff/fzy-search",

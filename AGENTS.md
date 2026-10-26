@@ -50,7 +50,7 @@ above on this checkout and on `main` and compare `p50`.
 - Commits and **PR titles** are Conventional Commits (`feat:`, `fix:`, `perf:`, `docs:`, `deps:`,
   `build:`, `ci:`, `chore:`, `refactor:`, `test:`). Merges are squashes, so the title is the commit
   message, and git-cliff writes `CHANGELOG.md` and picks the next version from those messages.
-  `feat:` is a minor, `fix:`/`perf:` a patch, `feat!:` or a `BREAKING CHANGE:` footer a major.
+  `feat:` is a minor, `fix:`/`perf:` a patch, `feat!:` or a `BREAKING CHANGE:` footer a major (below 1.0, a minor).
 - **Never edit `version` in `package.json` or `CHANGELOG.md` by hand.** The release workflow does both.
 - A release is one click: the Release workflow (`workflow_dispatch` on `main`, or `npm run release` from
   a maintainer's machine) bumps, tags, publishes to npm with provenance, then pushes. Do not start it

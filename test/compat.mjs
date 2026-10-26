@@ -37,7 +37,7 @@ assert.strictEqual(all.length, 2);
 assert.ok(all[0].score >= all[1].score);
 assert.strictEqual(search('master', index, { limit: 1 }).length, 1);
 
-// the options added in 1.1: defaults are a no-op, each one does one thing
+// the tightening options: defaults are a no-op, each one does one thing
 assert.deepStrictEqual(search('sicences', index, {}), search('sicences', index));
 assert.deepStrictEqual(search('manag', index, { prefix: false, maxEdits: 0 }), []);
 assert.strictEqual(typeof tolerance, 'function');

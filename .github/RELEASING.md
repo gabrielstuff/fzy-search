@@ -14,7 +14,8 @@
    tag and creates the GitHub Release. Tick `dry-run` first to see the version and the notes without
    publishing. Never edit the version by hand.
 
-`feat:` is a minor, `fix:` and `perf:` a patch, `feat!:` (or a `BREAKING CHANGE:` footer) a major.
+`feat:` is a minor, `fix:` and `perf:` a patch, `feat!:` (or a `BREAKING CHANGE:` footer) a major. Below 1.0 there is no major: a breaking change bumps
+the minor, and 1.0.0 is a decision made with the `bump` input once the API has settled.
 
 ## One-time setup
 
@@ -23,16 +24,16 @@ These need an account owner, so they are a checklist, not code.
 - [ ] **Install the GitHub Apps** on this repository: [pkg-pr-new](https://github.com/apps/pkg-pr-new)
       (previews) and [Renovate](https://github.com/apps/renovate) (dependency updates).
 - [ ] **First publish, by hand.** npm only lets you configure trusted publishing for a package that
-      exists, so version 1.0.0 is published once from the commit that is 1.0.0:
-      `git checkout bebaf37 && npm login && npm publish --access public`, then
-      `git switch main`. Then tag it: `gh release create v1.0.0 --target bebaf37 --title v1.0.0 --notes "First release"`.
+      exists, so version 0.1.0 (the version in `package.json`) is published once, from `main` after the
+      release pull request is merged: `git switch main && git pull && npm login && npm publish --access public`.
+      Then tag that commit: `gh release create v0.1.0 --target main --title v0.1.0 --notes "First release"`.
 - [ ] **npm, package settings, Trusted Publisher:** GitHub Actions, owner `gabrielstuff`, repository
       `fzy-search`, workflow `release.yml`, environment `npm`.
 - [ ] **Optional, recommended:** Settings, Environments, `npm`: add yourself as a required reviewer, so
       a release waits for one click. If branch protection is added later, it must let the release
       actor (`github-actions[bot]`) push to `main`.
-- [ ] **Then run the Release workflow.** After 1.0.0 is tagged it releases 1.1.0, the first version with
-      the search options. Without a `v1.0.0` tag git-cliff counts every commit, so tag 1.0.0 first.
+- [ ] **Then run the Release workflow** with `dry-run` ticked, and read the version and the notes. Without
+      a `v0.1.0` tag git-cliff counts every commit, so tag 0.1.0 first.
 
 Once npm has a trusted publisher, delete any npm token you created for the first publish. There is
 no token in this repository, and there should not be one.

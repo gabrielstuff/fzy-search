@@ -48,5 +48,5 @@ commit_parsers = [
 
 [bump]
 features_always_bump_minor = true
-breaking_always_bump_major = true
-initial_tag = "v1.0.0"
+breaking_always_bump_major = false
+initial_tag = "v0.1.0"
