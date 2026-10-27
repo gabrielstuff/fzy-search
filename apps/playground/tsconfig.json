@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "types": ["vite/client"],
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "erasableSyntaxOnly": true,
+    "skipLibCheck": true,
+    // Type-check against the library source, as `vp dev` runs it: no dependency on a prior build.
+    "paths": { "fzy-search": ["../../packages/fzy-search/src/index.ts"] }
+  },
+  "include": ["src", "vite.config.ts"]
+}

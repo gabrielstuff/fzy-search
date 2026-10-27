@@ -31,6 +31,8 @@ These need an account owner, so they are a checklist, not code.
       exists, so version 0.1.0 (the version in `package.json`) is published once, from `main` after the
       release pull request is merged: `git switch main && git pull && npm login && npm publish --access public`.
       Then tag that commit: `gh release create v0.1.0 --target main --title v0.1.0 --notes "First release"`.
+- [ ] **Settings, Pages:** source _GitHub Actions_. The Playground workflow then deploys
+      https://gabrielstuff.github.io/fzy-search/ on every push to `main` that changes it.
 - [ ] **npm, package settings, Trusted Publisher:** GitHub Actions, owner `gabrielstuff`, repository
       `fzy-search`, workflow `release.yml`, environment `npm`.
 - [ ] **Optional, recommended:** Settings, Environments, `npm`: add yourself as a required reviewer, so

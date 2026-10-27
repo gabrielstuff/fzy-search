@@ -17,7 +17,7 @@ first **93–98.5 %** of the time, against 47–83 % for five popular alternativ
 All the numbers, including the ones that do not flatter it, are in
 [results.md](https://github.com/gabrielstuff/fzy-search/blob/main/results.md).
 
-**[Try it in the playground →](https://gabrielstuff.github.io/fzy-search/)** 50 000 rows, every option, timed per keystroke.
+**[Try it in the playground →](https://gabrielstuff.github.io/fzy-search/)** on uFuzzy's 161,844-string benchmark corpus, the Fuse.js sample books or 34,969 French communes, with every option, timed per keystroke.
 
 ## Install
 
