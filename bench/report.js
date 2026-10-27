@@ -78,12 +78,14 @@ export function render(s) {
   p('max:');
   p(table(rows, per((c, n) => by(c, n)?.max, 'min', f2)));
 
+  // match-sorter has no index: its build is a no-op and its heap delta is noise around zero.
+  const indexed = (v, floor) => (typeof v === 'number' && v < floor ? '—' : v);
   p('## 5. Index build, ms');
   p('Median of two builds. match-sorter has no index.');
-  p(table(rows, per((c, n) => by(c, n)?.buildMs, 'min', f0)));
+  p(table(rows, per((c, n) => indexed(by(c, n)?.buildMs, 1), 'min', f0)));
   p('## 6. Retained heap of one index, MB');
   p('The index alone, on top of the corpus, each measured in its own process (`bench/mem.js`).');
-  p(table(rows, per((c, n) => mem(c, n)?.mb, 'min', f1)));
+  p(table(rows, per((c, n) => indexed(mem(c, n)?.mb, 0.1), 'min', f1)));
 
   p('## 7. Typo robustness — top-1 % per query shape');
   for (const c of corpora) {
