@@ -16,7 +16,7 @@
 // a magic number is nudged to fix a single query.
 //
 // The doc comments on the exports are the published API documentation: `vp pack`
-// copies them into dist/index.d.mts. The `//` comments are for whoever edits the code.
+// copies them into dist/index.d.ts. The `//` comments are for whoever edits the code.
 
 /**
  * A search hit.
@@ -142,7 +142,8 @@ type Index<Item> = FzyIndex<Item> & {
 type Options = { -readonly [K in keyof SearchOptions]-?: NonNullable<SearchOptions[K]> };
 
 const COMBINING = /[̀-ͯ]/g;
-const LIGATURES: Record<string, string> = { æ: 'ae', œ: 'oe', ß: 'ss', ø: 'o', đ: 'd', ł: 'l', '’': ' ', "'": ' ' };
+const LIGATURES: Record<string, string> = { æ: 'ae', œ: 'oe', ß: 'ss', ø: 'o', đ: 'd', ł: 'l', '’': ' ' };
+const NON_ASCII = /[^\0-\x7f]/;
 
 /**
  * Lowercase, de-accent, de-ligature. `map[i]` is the index of that character in the source string, which is how highlighting points back into the original.
@@ -156,22 +157,22 @@ const LIGATURES: Record<string, string> = { æ: 'ae', œ: 'oe', ß: 'ss', ø: 'o
  * ```
  */
 export function normalize(string: string): Normalized {
-  let text = '';
   const map: number[] = [];
+  return { text: fold(string, map), map };
+}
+
+// The folded text, and the map when one is passed. createIndex() and search() only need the text, and an
+// ASCII string folds to its lowercase: no work per character, which is most of what indexing costs.
+function fold(string: string, map?: number[]): string {
+  if (!map && !NON_ASCII.test(string)) return string.toLowerCase();
+  let text = '';
   for (let i = 0; i < string.length; i++) {
-    const ch = string[i];
-    let out;
-    if (ch.charCodeAt(0) < 128) out = ch.toLowerCase();
-    else {
-      const low = ch.toLowerCase();
-      out = LIGATURES[low] ?? low.normalize('NFD').replace(COMBINING, '');
-    }
-    for (let k = 0; k < out.length; k++) {
-      text += out[k];
-      map.push(i);
-    }
+    const low = string[i].toLowerCase();
+    const out = string.charCodeAt(i) < 128 ? low : (LIGATURES[low] ?? low.normalize('NFD').replace(COMBINING, ''));
+    text += out;
+    if (map) for (let k = 0; k < out.length; k++) map.push(i);
   }
-  return { text, map };
+  return text;
 }
 
 // Word boundaries as a flat [start, end, start, end, ...] array.
@@ -190,17 +191,12 @@ function bounds(text: string): number[] {
   return out;
 }
 
-const tokenize = (text: string): string[] => {
-  const b = bounds(text),
-    w: string[] = [];
-  for (let i = 0; i < b.length; i += 2) w.push(text.slice(b[i], b[i + 1]));
-  return w;
-};
+const tokenize = (text: string): string[] => text.match(/[a-z0-9]+/g) ?? [];
 
-// Bitmask of the a-z letters present in `text` (bit 26 = any digit).
-function charMask(text: string): number {
+// Bitmask of the a-z letters present in `text`, or in its first `end` characters (bit 26 = any digit).
+function charMask(text: string, end = text.length): number {
   let m = 0;
-  for (let i = 0; i < text.length; i++) {
+  for (let i = 0; i < end; i++) {
     const c = text.charCodeAt(i);
     if (c >= 97 && c <= 122) m |= 1 << (c - 97);
     else if (c >= 48 && c <= 57) m |= 1 << 26;
@@ -357,7 +353,7 @@ export function createIndex<Item>(
   // which is what keeps the search sub-millisecond: fuzzy matching runs against the
   // vocabulary once per query, never against every row.
   if (typeof source !== 'object' || source === null)
-    throw new TypeError('createIndex: source must be an array of rows or a plain object map');
+    throw new TypeError('createIndex: source must be an array or an object');
   const getText = accessor(key);
   const keys = Array.isArray(source) ? null : Object.keys(source);
   const items = (keys ? keys.map((k) => (source as Record<string, Item>)[k]) : source) as Item[];
@@ -366,7 +362,7 @@ export function createIndex<Item>(
     words: Int32Array[] = new Array(n);
   const vocab = new Map<string, Posting>();
   for (let i = 0; i < n; i++) {
-    const t = normalize(String(getText(items[i]))).text;
+    const t = fold(String(getText(items[i])));
     texts[i] = t;
     const b = bounds(t);
     words[i] = Int32Array.from(b); // offsets, not substrings: ~2.5x less heap
@@ -414,16 +410,31 @@ export function createIndex<Item>(
 
 // --- scoring cascade ------------------------------------------------------
 // Tiers never overlap: exact 1000 > prefix 900 > substring 800 > per-word <= 170.
-// Runs once per vocabulary word. `tol` and the switches are resolved once per query word by
-// the caller and passed as plain arguments, not read off the options object here.
-function wordScore(q: string, w: string, tol: number, prefix: boolean, infix: boolean, keepInitial: boolean): number {
+// Runs once per vocabulary word. `tol`, `qMask` and the switches are resolved once per query word
+// by the caller and passed as plain arguments, not read off the options object here.
+function wordScore(
+  q: string,
+  qMask: number,
+  w: string,
+  tol: number,
+  prefix: boolean,
+  infix: boolean,
+  keepInitial: boolean,
+): number {
   if (w === q) return 100;
   if (prefix && w.length > q.length && w.startsWith(q)) return 90 - Math.min(9, w.length - q.length);
   const at = infix && q.length >= 3 ? w.indexOf(q) : -1; // no infix match on 1-2 letters:
   if (at > 0) return 70; // "de" must not match "monde"
   if (tol === 0) return 0;
   if (keepInitial && w.charCodeAt(0) !== q.charCodeAt(0)) return 0;
-  const cut = w.length > q.length + tol ? w.slice(0, q.length + tol) : w;
+  // The edit distance is taken against the start of `w`, `q.length + tol` letters at most. Each edit
+  // brings in at most one letter of `q` that this start lacks and drops at most one it has that `q`
+  // lacks: more of either than the budget and osa() cannot accept it. Exact, and it spares osa() most
+  // of the words that reach this line, whose letters the whole-word mask sees further along.
+  const end = w.length > q.length + tol ? q.length + tol : w.length;
+  const m = charMask(w, end);
+  if (popcount(qMask & ~m) > tol || popcount(m & ~qMask) > tol) return 0;
+  const cut = end < w.length ? w.slice(0, end) : w;
   const d = osa(q, cut, tol);
   return d <= tol ? 62 - 12 * d - (cut === w ? 0 : 4) : 0;
 }
@@ -449,7 +460,7 @@ function vocabHits<Item>(q: string, index: Index<Item>, o: Options = DEFAULTS): 
   for (let k = 0; k < vWord.length; k++) {
     if (vLen[k] < minLen) continue;
     if (popcount(qMask & ~vMask[k]) > tol) continue;
-    const s = wordScore(q, vWord[k], tol, prefix, infix, keepInitial);
+    const s = wordScore(q, qMask, vWord[k], tol, prefix, infix, keepInitial);
     if (s > 0) {
       posts.push(vPost[k]);
       scores.push(s);
@@ -487,34 +498,31 @@ function letters<Item>(index: Index<Item>, i: number): number {
 // queries (null, numbers) read as their string form or empty, never throw.
 function qNorm(query: unknown): string {
   // oxlint-disable-next-line typescript/no-base-to-string -- on purpose: any value reads as its string form
-  return normalize(String(query ?? ''))
-    .text.trim()
+  return fold(String(query ?? ''))
+    .trim()
     .replace(/\s+/g, ' ');
 }
+
+// One search result, as both search() and substrScan() return it.
+const result = <Item>(index: Index<Item>, i: number, score: number): SearchResult<Item> => ({
+  item: index.items[i],
+  key: index.keys ? index.keys[i] : i,
+  score,
+  i,
+});
 
 // Fallback for queries the inverted index cannot see at all: a query with no
 // ASCII word characters — a non-Latin script (bounds() only knows a-z0-9), or
 // a symbol. A substring scan over the normalized texts keeps such queries from
 // being a silent miss. No fuzz here; punctuation-only queries stay empty.
 function substrScan<Item>(qText: string, index: Index<Item>, limit: number): SearchResult<Item>[] {
-  let nonAscii = false;
-  for (let k = 0; k < qText.length; k++)
-    if (qText.charCodeAt(k) > 0x7f) {
-      nonAscii = true;
-      break;
-    }
-  if (!nonAscii) return [];
+  if (!NON_ASCII.test(qText)) return [];
   const out: SearchResult<Item>[] = [];
   for (let i = 0; i < index.texts.length; i++) {
     const text = index.texts[i];
     const at = text.indexOf(qText);
     if (at < 0) continue;
-    out.push({
-      item: index.items[i],
-      key: index.keys ? index.keys[i] : i,
-      score: text === qText ? 1000 : at === 0 ? 900 : 800 + 1 / (1 + at),
-      i,
-    });
+    out.push(result(index, i, text === qText ? 1000 : at === 0 ? 900 : 800 + 1 / (1 + at)));
   }
   out.sort((a, b) => b.score - a.score);
   return limit < out.length ? out.slice(0, limit) : out;
@@ -628,7 +636,7 @@ export function search<Item>(
     if (score < o.minScore) continue;
     if (o.minCoverage > 0 && covered / letters(index, i) < o.minCoverage) continue;
     if (capped && out.length === limit && score <= floor) continue;
-    const row = { item: index.items[i], key: index.keys ? index.keys[i] : i, score, i };
+    const row = result(index, i, score);
     if (!capped) {
       out.push(row);
       continue;
@@ -672,12 +680,13 @@ export function ranges<Item>(query: string, fzyIndex: FzyIndex<Item>, i: number)
   else {
     const b = bounds(text);
     for (const q of tokenize(qText)) {
+      const qMask = charMask(q);
       let best = 0,
         span: [number, number] | null = null;
       for (let bi = 0; bi < b.length; bi += 2) {
         const off = b[bi],
           w = text.slice(off, b[bi + 1]);
-        const s = wordScore(q, w, tolerance(q.length), true, true, false);
+        const s = wordScore(q, qMask, w, tolerance(q.length), true, true, false);
         if (s > best) {
           best = s;
           const k = w.indexOf(q);

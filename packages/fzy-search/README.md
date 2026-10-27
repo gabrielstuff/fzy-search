@@ -179,8 +179,11 @@ Three phases, and the row text is not touched until the last one.
 
 1. **Resolve** each query word against the **vocabulary** — the distinct words in
    the corpus, a few thousand to a few tens of thousands — never against every
-   row. Two exact integer rejects (word too short, or too many of the query's
-   letters missing from the word) keep edit distance off the hot path.
+   row. Exact integer rejects keep edit distance off the hot path: the word is
+   too short, too many of the query's letters are missing from it, or the start
+   of the word that edit distance would compare holds too many letters the query
+   lacks, or lacks too many it has. On uFuzzy's 84,000-word vocabulary, the last
+   check spares edit distance nine words in ten of those that reach it.
 2. **Walk the postings.** Each vocabulary word points at the rows containing it
    and the position it occupies there. One pass over the matched postings both
    selects the candidate rows and records, per query word, the best score and
