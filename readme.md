@@ -250,7 +250,7 @@ The real benchmark corpora download themselves on first use and cache under
 Commits and pull-request titles are [Conventional Commits](https://www.conventionalcommits.org):
 `feat:` ships a minor, `fix:` and `perf:` a patch, `feat!:` a major. Merges are squashes, so the title
 is the commit message, and the changelog and the next version are written from those messages by the
-Release workflow (one click, no release PR) — never edit `version` or `CHANGELOG.md` by hand. [AGENTS.md](AGENTS.md) has the rules for working on the code,
+Release workflow (one click, no release PR) — never edit `version` or `CHANGELOG.md` by hand. [AI_POLICY.md](AI_POLICY.md) says how AI-assisted changes are expected to arrive. [AGENTS.md](AGENTS.md) has the rules for working on the code,
 whether you are a person or a coding agent; [.github/RELEASING.md](.github/RELEASING.md) has the release flow.
 
 ## License
