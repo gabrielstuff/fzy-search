@@ -13,7 +13,7 @@ export default defineConfig({
   fmt: {
     singleQuote: true,
     printWidth: 120,
-    ignorePatterns: ['**/dist/**', 'bench/**', 'results.md', '**/CHANGELOG.md', 'pnpm-lock.yaml'],
+    ignorePatterns: ['**/dist/**', 'bench/**', 'results.md', 'results-*.md', '**/CHANGELOG.md', 'pnpm-lock.yaml'],
   },
   lint: {
     ignorePatterns: ['**/dist/**', 'bench/**'],
