@@ -73,6 +73,46 @@ jobs:
       - run: npm run check:size
       - run: npm pack --dry-run
 
+  # The readme sells a client-side library, so it is not only a Node one: the same compat test runs on
+  # Bun and Deno. Deno needs the flag because compat.mjs imports `assert` bare, as Node 14 requires.
+  runtimes:
+    name: compat (${{ matrix.runtime }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - if: matrix.runtime == 'bun'
+        run: bun test/compat.mjs
+      - if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - if: matrix.runtime == 'deno'
+        run: deno run --unstable-bare-node-builtins test/compat.mjs
+
+  # What a consumer installs: pack, install the tarball in an empty project, import every export.
+  tarball:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+      - run: node scripts/test-tarball.mjs
+
   # index.d.ts is hand-written: test/types.test-d.ts pins every export, option and result shape
   # against it, and the expect-error lines pin what must not compile.
   types:

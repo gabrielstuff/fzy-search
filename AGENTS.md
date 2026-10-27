@@ -11,6 +11,8 @@ npm test                 # test.js, node:test, Node >= 18
 npm run test:compat      # test/compat.mjs: dependency-free, runs on the oldest supported Node
 npm run check:package    # publint and attw: exports, types, files
 npm run check:types      # tsc over test/types.test-d.ts: index.d.ts cannot drift from index.js
+node scripts/test-tarball.mjs   # pack, install the tarball in an empty project, import every export
+bun test/compat.mjs      # the compat test on Bun; Deno: deno run --unstable-bare-node-builtins test/compat.mjs
 npm run check:size       # gzipped bundle cost against the budget in scripts/size.mjs
 npm ci                   # root install: tooling only (esbuild, publint, pkg-pr-new)
 
