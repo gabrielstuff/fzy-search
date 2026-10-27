@@ -9,7 +9,6 @@ on:
     paths:
       - apps/playground/**
       - packages/fzy-search/**
-      - bench/corpus.js
       - pnpm-lock.yaml
       - .github/workflows/pages.yml
   workflow_dispatch:

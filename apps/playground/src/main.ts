@@ -163,7 +163,7 @@ function renderSnippet() {
   snippet.textContent = [
     `import { createIndex, search, highlight } from 'fzy-search';`,
     ``,
-    `const index = createIndex(rows, 'name'); // once`,
+    `const index = ${dataset.index}; // once`,
     `const hits = search(${quoted}, index${changed.length ? `, ${args}` : ''});`,
   ].join('\n');
 }
@@ -172,13 +172,13 @@ function renderExamples() {
   if (!dataset.examples[mode].length) {
     const button = document.createElement('button');
     button.type = 'button';
-    button.textContent = 'try it on the communes';
+    button.textContent = 'try it on the English words';
     button.addEventListener('click', () => {
-      datasetSelect.value = 'communes';
-      void load(DATASETS.find((d) => d.id === 'communes')!);
+      datasetSelect.value = 'words';
+      void load(DATASETS.find((d) => d.id === 'words')!);
     });
     examples.replaceChildren(
-      'This preset asks “is this word a misspelling of one of these names?”: the word must cover 80 % of a row, which long labels never do. ',
+      'This preset asks “is this word a misspelling of one of these names?”: the word must cover 80 % of a row, which long rows never reach. ',
       button,
       '.',
     );
@@ -208,8 +208,9 @@ function syncControls() {
     const value = options[key];
     if (control instanceof HTMLInputElement && control.type === 'checkbox') control.checked = value as boolean;
     else control.value = value === -Infinity ? '' : String(value);
-    if (control instanceof HTMLInputElement && control.type === 'range') control.title = String(value);
   }
+  for (const output of document.querySelectorAll<HTMLOutputElement>('output[data-for]'))
+    output.value = String(options[output.dataset.for as keyof Options]);
   for (const button of document.querySelectorAll<HTMLButtonElement>('[data-mode]'))
     button.setAttribute('aria-checked', String(button.dataset.mode === mode));
 }

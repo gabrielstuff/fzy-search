@@ -44,6 +44,51 @@
         </div>
       </section>
 
+      <section class="options" aria-label="Search options">
+        <div class="grid">
+          <label title="A query word matches the start of a longer word: par finds paris.">
+            <input type="checkbox" data-opt="prefix" /> prefix
+          </label>
+          <label title="A query word matches the inside of a longer word. Never for words of 1-2 letters.">
+            <input type="checkbox" data-opt="infix" /> infix
+          </label>
+          <label title="A typo-matched word must start with the same letter as the query word.">
+            <input type="checkbox" data-opt="keepInitial" /> keepInitial
+          </label>
+          <label class="field" title="Maximum number of results. A running top-N replaces the sort.">
+            <span>limit</span>
+            <input type="number" min="1" max="200" step="1" data-opt="limit" />
+          </label>
+          <label
+            class="field"
+            title="Edits forgiven per query word. By length: 0 up to 3 letters, 1 up to 7, 2 beyond."
+          >
+            <span>maxEdits</span>
+            <select data-opt="maxEdits">
+              <option value="Infinity">by length</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+              <option value="0">0, typos off</option>
+            </select>
+          </label>
+          <label class="field" title="Query words shorter than this are never typo-matched.">
+            <span>minTypoLength <output data-for="minTypoLength"></output></span>
+            <input type="range" min="0" max="10" step="1" data-opt="minTypoLength" />
+          </label>
+          <label class="field" title="From 0 to 1: the share of a row's letters the query words must account for.">
+            <span>minCoverage <output data-for="minCoverage"></output></span>
+            <input type="range" min="0" max="1" step="0.05" data-opt="minCoverage" />
+          </label>
+          <label
+            class="field"
+            title="Drop rows scoring below this: 1000 exact, 900 prefix, 800 substring, up to 170 per word."
+          >
+            <span>minScore</span>
+            <input type="number" step="10" data-opt="minScore" placeholder="none" />
+          </label>
+        </div>
+      </section>
+
       <div class="search">
         <input
           id="query"
@@ -66,28 +111,6 @@
       </div>
 
       <ol id="results" class="results"></ol>
-
-      <details class="options">
-        <summary>Options</summary>
-        <div class="grid">
-          <label>limit <input type="number" min="1" max="200" step="1" data-opt="limit" /></label>
-          <label><input type="checkbox" data-opt="prefix" /> prefix</label>
-          <label><input type="checkbox" data-opt="infix" /> infix</label>
-          <label><input type="checkbox" data-opt="keepInitial" /> keepInitial</label>
-          <label>
-            maxEdits
-            <select data-opt="maxEdits">
-              <option value="Infinity">by length (0/1/2)</option>
-              <option value="2">2</option>
-              <option value="1">1</option>
-              <option value="0">0, typos off</option>
-            </select>
-          </label>
-          <label>minTypoLength <input type="range" min="0" max="10" step="1" data-opt="minTypoLength" /></label>
-          <label>minCoverage <input type="range" min="0" max="1" step="0.05" data-opt="minCoverage" /></label>
-          <label>minScore <input type="number" step="10" data-opt="minScore" placeholder="-Infinity" /></label>
-        </div>
-      </details>
 
       <section class="code" aria-label="This search, as code">
         <div class="code-head">

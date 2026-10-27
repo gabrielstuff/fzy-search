@@ -2,9 +2,16 @@
 
 The live demo of fzy-search: <https://gabrielstuff.github.io/fzy-search/>.
 
-Vanilla TypeScript, no framework, about 11 kB gzipped with the library and the corpus generator. Every keystroke
-searches the whole list and the page prints how long it took. The lists are 5 000 to 100 000 generated French
-formations (`bench/corpus.js`, the benchmark corpus) and the 34 969 French communes, fetched from geo.api.gouv.fr.
+Vanilla TypeScript, no framework. Every keystroke searches the whole list and the page prints how long it took.
+The lists are the ones other fuzzy search libraries are judged on, fetched at a pinned commit through jsDelivr,
+never copied into this repository:
+
+- uFuzzy's comparison corpus (`demos/testdata.json`, MIT): 161,844 strings that its demo races about 25 libraries on,
+  fzy.js and Fuse.js among them. It is offered whole, with uFuzzy's benchmark terms as examples, and list by list:
+  Steam games, English words, Magic and Hearthstone cards, Unreal Engine 4 files, Prometheus metric names.
+- The Fuse.js sample books (`test/fixtures/books.json`, Apache-2.0), the list of its live demo.
+- The 34,969 French communes from geo.api.gouv.fr, for accents.
+
 The state lives in the URL hash, so a search is a link.
 
 ```sh
