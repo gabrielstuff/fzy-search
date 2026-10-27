@@ -6,6 +6,7 @@
 // The readme and package.json quote these numbers: change the budget on purpose, in the PR that
 // grows the library, and update the quoted figures with it.
 import { build } from 'esbuild';
+import { readFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -32,7 +33,26 @@ console.log(`createIndex + search  ${String(searchOnly).padStart(5)} B  ${kb(sea
 console.log(`+ highlight           ${String(withHighlight).padStart(5)} B  ${kb(withHighlight)}  (budget ${kb(BUDGET_WITH_HIGHLIGHT)})`);
 
 if (process.argv[2]) process.exit(0);
+let failed = false;
 if (searchOnly > BUDGET_SEARCH_ONLY || withHighlight > BUDGET_WITH_HIGHLIGHT) {
-  console.error('Over budget. If the growth is intended, raise the budget here and update the sizes in readme.md and package.json.');
-  process.exit(1);
+  console.error('Over budget. If the growth is intended, raise the budget here and update the sizes in readme.md, package.json and llms.txt.');
+  failed = true;
 }
+
+// The quoted figures are the measured ones, rounded to 0.1 kB: a stale claim fails like a blown budget.
+const quoted = (bytes) => `${(bytes / 1024).toFixed(1)} kB`;
+const read = (file) => readFileSync(new URL(`../${file}`, import.meta.url), 'utf8');
+const claims = [
+  ['package.json', `${quoted(searchOnly)},`],
+  ['llms.txt', `about ${quoted(searchOnly)} gzipped`],
+  ['readme.md', `${quoted(searchOnly)} gzipped`],
+  ['readme.md', `(${quoted(withHighlight)} if you also pull in`],
+  ['readme.md', `**${quoted(searchOnly)}**`],
+];
+for (const [file, text] of claims) {
+  if (!read(file).includes(text)) {
+    console.error(`${file} does not say "${text}": the measured size changed, or the claim did. Update the quoted figure.`);
+    failed = true;
+  }
+}
+if (failed) process.exit(1);

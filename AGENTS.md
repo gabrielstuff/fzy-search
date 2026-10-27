@@ -13,16 +13,31 @@ npm run check:package    # publint and attw: exports, types, files
 npm run check:types      # tsc over test/types.test-d.ts: index.d.ts cannot drift from index.js
 node scripts/test-tarball.mjs   # pack, install the tarball in an empty project, import every export
 bun test/compat.mjs      # the compat test on Bun; Deno: deno run --unstable-bare-node-builtins test/compat.mjs
+npm run check:docs       # every option and export of index.d.ts is in the skill, llms.txt and the readme
+npm run lint             # oxlint, correctness rules only (no formatter)
 npm run check:size       # gzipped bundle cost against the budget in scripts/size.mjs
-npm ci                   # root install: tooling only (esbuild, publint, pkg-pr-new)
+npm ci                   # root install: tooling only (esbuild, publint, attw, typescript, oxlint, git-cliff, pkg-pr-new)
 
 ONLY=fzy node --expose-gc bench/run.js synthetic   # speed and relevance of this checkout
 npm ci --prefix bench --ignore-scripts             # first, once: the benchmark contenders
 ```
 
 Before you call a change done: `npm test`, `npm run test:compat`, `npm run check:package`,
-`npm run check:size`. If you touched `search()`, `vocabHits()` or `wordScore()`, also run the bench
-above on this checkout and on `main` and compare `p50`.
+`npm run check:types`, `npm run check:docs`, `npm run lint`, `npm run check:size`. If you touched
+`search()`, `vocabHits()` or `wordScore()`, also run the bench above on this checkout and on `main`
+and compare `p50`.
+
+## How to work here
+
+- **State your assumptions** before a change that depends on one, and ask when two readings of the task
+  lead to different code.
+- **Make the smallest change that does the task.** No drive-by refactors, no new options "for later", no
+  abstraction for a single caller. The file is meant to stay readable in one sitting.
+- **Surgical diffs.** Every changed line traces back to the task. Match the surrounding style (tabs, single
+  quotes, the comment density of the file); do not reformat what you did not change.
+- **Define the check, then loop until it passes.** Before you start, name the command that proves the change
+  (a test that fails now, a bench number, a size). Run it, fix, run it again; say what you ran and what it said.
+- **Do not cut a release** (`npm run release`, or the Release workflow) unless a maintainer asked.
 
 ## Rules that are not negotiable
 
@@ -39,7 +54,8 @@ above on this checkout and on `main` and compare `p50`.
   an integer, resolve options once per query word, and measure with the bench before and after.
 - **Size is a claim.** The README and `package.json` quote the gzipped size. `npm run check:size` fails
   past the budget in `scripts/size.mjs`; raising it is a decision made in the PR that grows the library,
-  with the quoted figures updated in the same PR.
+  with the quoted figures updated in the same PR. `check:size` also fails when a quoted figure is not the
+  measured one rounded to 0.1 kB.
 
 ## Node versions
 
@@ -77,3 +93,6 @@ README. Do not edit the copy: the next copy silently reverts the edit. Send the 
 | `bench/` | the benchmark against five alternatives; its own `package.json` |
 | `results.md` | the recorded benchmark results, including the ones that do not flatter the library |
 | `llms.txt` | a short API reference for language models |
+| `skills/fzy-search/SKILL.md` | the agent skill shipped in the package: which options for which use case |
+| `scripts/release.mjs`, `cliff.toml` | the release: version, changelog, tag, publish |
+| `scripts/check-docs.mjs`, `scripts/test-tarball.mjs` | docs drift and packed-tarball checks |
