@@ -1,13 +1,13 @@
 // Bundle each library alone, minified + gzipped — what it actually adds to a client bundle.
 import { build } from 'esbuild';
 import { gzipSync, brotliCompressSync } from 'node:zlib';
-import { writeFileSync, mkdtempSync } from 'node:fs';
-
+import { writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { adapters } from './adapters.js';
 const ADAPTERS = adapters();
 
-const dir = mkdtempSync(join(process.cwd(), '.size-'));
+// The entries are written next to bench/node_modules, so the contenders resolve from any working directory.
+const dir = mkdtempSync(join(import.meta.dirname, '.size-'));
 const rows = [];
 for (const a of ADAPTERS) {
   if (rows.some((r) => r.name.split(' (')[0] === a.name.split(' (')[0])) continue;
@@ -20,6 +20,7 @@ for (const a of ADAPTERS) {
   const code = Buffer.from(out.outputFiles[0].contents);
   rows.push({ name: a.name.split(' (')[0], min: code.length, gzip: gzipSync(code, { level: 9 }).length, br: brotliCompressSync(code).length });
 }
+rmSync(dir, { recursive: true });
 console.log('\n## Bundle cost (minified, gzip, brotli)\n');
 console.log('library'.padEnd(16) + 'min'.padStart(10) + 'gzip'.padStart(10) + 'brotli'.padStart(10));
 console.log('-'.repeat(46));
