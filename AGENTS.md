@@ -96,3 +96,4 @@ README. Do not edit the copy: the next copy silently reverts the edit. Send the 
 | `skills/fzy-search/SKILL.md` | the agent skill shipped in the package: which options for which use case |
 | `scripts/release.mjs`, `cliff.toml` | the release: version, changelog, tag, publish |
 | `scripts/check-docs.mjs`, `scripts/test-tarball.mjs` | docs drift and packed-tarball checks |
+| `.github/workflows/size.yml`, `size-comment.yml`, `scripts/size-comment.mjs` | the size delta comment on pull requests: one job measures with a read-only token, another posts two validated integers. Never make the posting job run PR code |

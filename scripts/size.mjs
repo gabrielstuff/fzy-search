@@ -2,6 +2,7 @@
 //
 //   node scripts/size.mjs            fails if the cost is over the budget (CI runs this)
 //   node scripts/size.mjs <file.js>  measures another copy of the library, e.g. to compare with a release
+//   node scripts/size.mjs --json     prints the two sizes as JSON and checks nothing (the size comment uses it)
 //
 // The readme and package.json quote these numbers: change the budget on purpose, in the PR that
 // grows the library, and update the quoted figures with it.
@@ -16,7 +17,10 @@ const BUDGET_SEARCH_ONLY = 2800;
 /** The same plus `highlight`. */
 const BUDGET_WITH_HIGHLIGHT = 3200;
 
-const target = resolve(process.argv[2] ?? fileURLToPath(new URL('../index.js', import.meta.url)));
+const args = process.argv.slice(2);
+const json = args.includes('--json');
+const file = args.find((arg) => !arg.startsWith('--'));
+const target = resolve(file ?? fileURLToPath(new URL('../index.js', import.meta.url)));
 
 async function gzipSize(names) {
   const out = await build({
@@ -29,10 +33,14 @@ async function gzipSize(names) {
 const kb = (bytes) => `${(bytes / 1024).toFixed(2)} kB`;
 const searchOnly = await gzipSize('createIndex, search');
 const withHighlight = await gzipSize('createIndex, search, highlight');
+if (json) {
+  console.log(JSON.stringify({ searchOnly, withHighlight }));
+  process.exit(0);
+}
 console.log(`createIndex + search  ${String(searchOnly).padStart(5)} B  ${kb(searchOnly)}  (budget ${kb(BUDGET_SEARCH_ONLY)})`);
 console.log(`+ highlight           ${String(withHighlight).padStart(5)} B  ${kb(withHighlight)}  (budget ${kb(BUDGET_WITH_HIGHLIGHT)})`);
 
-if (process.argv[2]) process.exit(0);
+if (file) process.exit(0);
 let failed = false;
 if (searchOnly > BUDGET_SEARCH_ONLY || withHighlight > BUDGET_WITH_HIGHLIGHT) {
   console.error('Over budget. If the growth is intended, raise the budget here and update the sizes in readme.md, package.json and llms.txt.');

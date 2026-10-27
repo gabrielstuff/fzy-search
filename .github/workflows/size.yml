@@ -1,0 +1,46 @@
+name: Size
+
+# Measures the pull request and its base, and hands the two numbers to size-comment.yml, which
+# posts them. The trust is split on purpose: this job runs the pull request's code (esbuild over
+# its index.js) so it only gets a read-only token and can never comment; the job that can comment
+# never runs that code and only reads two integers from the artifact.
+on:
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  group: size-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  measure:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          path: base
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - name: Measure the pull request and its base
+        run: |
+          node scripts/size.mjs --json > head.json
+          node scripts/size.mjs base/index.js --json > base.json
+          node -e 'const f = (p) => JSON.parse(require("fs").readFileSync(p, "utf8")); require("fs").writeFileSync("size.json", JSON.stringify({ head: f("head.json"), base: f("base.json") }))'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: size
+          path: size.json
+          if-no-files-found: error
+          retention-days: 1
