@@ -31,8 +31,8 @@ The options cannot tell a typo from an ordinary word one edit away from a name (
 
 ## Docs
 
-- [README](https://github.com/gabrielstuff/fzy-search/blob/main/readme.md): usage, API, scoring, caveats
-- [Types](https://github.com/gabrielstuff/fzy-search/blob/main/index.d.ts): every export, with doc comments
+- [README](https://github.com/gabrielstuff/fzy-search/blob/main/packages/fzy-search/README.md): usage, API, scoring, caveats
+- [Types](https://github.com/gabrielstuff/fzy-search/blob/main/packages/fzy-search/src/index.ts): every export, with doc comments
 - [AGENTS.md](https://github.com/gabrielstuff/fzy-search/blob/main/AGENTS.md): how to change the code safely
 - [Benchmark results](https://github.com/gabrielstuff/fzy-search/blob/main/results.md): against five alternatives, including where it loses
 
