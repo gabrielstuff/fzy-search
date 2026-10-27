@@ -72,3 +72,21 @@ jobs:
       - run: npm run check:package
       - run: npm run check:size
       - run: npm pack --dry-run
+
+  # index.d.ts is hand-written: test/types.test-d.ts pins every export, option and result shape
+  # against it, and the expect-error lines pin what must not compile.
+  types:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run check:types
