@@ -2,6 +2,13 @@
 
 Evidence behind the comparison table in [readme.md](readme.md).
 
+This file is the reading: what is measured, how, and the caveats. The numbers below
+were taken on a 2 vCPU runner, before the perf work of October 2026, and are kept as
+the narrative's reference. Current numbers are generated, one file per machine,
+by `node bench/sweep.js --label <machine>`: [results-mbp.md](results-mbp.md) from a
+laptop, and the Bench workflow's file from a GitHub runner. Those files hold the
+machine, the library versions and every table; they are never edited by hand.
+
 Node 22, 2 vCPU. Four corpora, three of them real. Every query is typed **without
 accents** — how people actually search French text — so accent folding is table
 stakes, not a bonus category.

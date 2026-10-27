@@ -12,8 +12,13 @@ import { createIndex, search as fzySearch, LIB_PATH } from './lib.js';
 const deaccent = (s) =>
   s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[’']/g, ' ').toLowerCase();
 
+// SKIP=Fuse,match-sorter leaves those contenders out of every script; Fuse.js is most of a sweep's hour.
+const SKIP = (process.env.SKIP ?? '').split(',').filter(Boolean);
+
 /** Adapters for a corpus whose text lives at `items[i][key]`. */
-export const adapters = (key = 'name') => [
+export const adapters = (key = 'name') => all(key).filter((a) => !SKIP.some((s) => a.name.toLowerCase().includes(s.toLowerCase())));
+
+const all = (key) => [
   {
     name: 'fzy-search',
     build: (items) => createIndex(items, key),
