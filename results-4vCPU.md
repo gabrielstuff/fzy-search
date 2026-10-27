@@ -126,10 +126,10 @@ Median of two builds. match-sorter has no index.
 
 | library | synthetic | alpaca | abo | overture |
 |---|---|---|---|---|
-| match-sorter | **0** | **0** | **0** | **0** |
-| Fuse.js | 19 | 43 | 24 | 28 |
-| fuzzysort | 58 | 145 | 66 | 121 |
 | **fzy-search** | 85 | 213 | 99 | 158 |
+| match-sorter | — | — | — | — |
+| Fuse.js | **19** | **43** | **24** | **28** |
+| fuzzysort | 58 | 145 | 66 | 121 |
 | MiniSearch | 203 | 711 | 440 | 437 |
 | FlexSearch (LatinExtra) | 277 | 877 | 604 | 771 |
 | FlexSearch (LatinBalance) | 431 | 1249 | 838 | 995 |
@@ -140,9 +140,9 @@ The index alone, on top of the corpus, each measured in its own process (`bench/
 
 | library | synthetic | alpaca | abo | overture |
 |---|---|---|---|---|
-| match-sorter | **-0.0** | **-0.0** | **-0.0** | **-0.0** |
-| Fuse.js | 6.0 | 15.7 | 9.5 | 18.8 |
-| **fzy-search** | 6.7 | 18.8 | 15.5 | 18.7 |
+| **fzy-search** | 6.7 | 18.8 | 15.5 | **18.7** |
+| match-sorter | — | — | — | — |
+| Fuse.js | **6.0** | **15.7** | **9.5** | 18.8 |
 | FlexSearch (LatinExtra) | 8.1 | 23.3 | 24.2 | 39.0 |
 | FlexSearch (LatinBalance) | 14.0 | 47.9 | 53.1 | 90.5 |
 | MiniSearch | 14.9 | 45.4 | 37.3 | 52.4 |
