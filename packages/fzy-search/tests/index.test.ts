@@ -210,7 +210,7 @@ test('missing, null and non-string values do not throw', () => {
 
 // --- robustness additions ---------------------------------------------------
 test('non-Latin queries fall back to substring matching instead of a silent miss', () => {
-  // bounds() only knows a-z0-9, so a Cyrillic word is invisible to the index;
+  // the index only knows a-z0-9, so a Cyrillic word is invisible to it;
   // search() must not answer "no rows" to an exact substring.
   const i = createIndex(['Москва université', 'Kyiv institute']);
   assert.deepEqual(
@@ -365,4 +365,21 @@ test('options reach every word of a multi-word query', () => {
   assert.deepEqual(names('clermont ferand', { maxEdits: 0 }), []);
   assert.deepEqual(names('clermont gerrand'), ['Clermont-Ferrand']);
   assert.deepEqual(names('clermont gerrand', { keepInitial: true }), []);
+});
+
+test('a query word resolved from the memo gives the same rows as a fresh index', () => {
+  // search() memoizes each query word's vocabulary resolution on the index, 32 words deep, keyed by
+  // the word and the options that shape it. Cycle more words than that through one index, in several
+  // option sets, and compare every answer with an index that has never seen the query.
+  const QUERIES = ['sicences donnes', 'manag commercial', 'clermont ferand', 'ingenieur lyon', 'oenolog', 'patisserie'];
+  const OPTS: SearchOptions[] = [{}, { prefix: false }, { maxEdits: 0 }, { keepInitial: true, infix: false }];
+  const strip = (rows: ReturnType<typeof search>) => rows.map((r) => [r.i, r.score]);
+  for (let round = 0; round < 3; round++) {
+    for (let n = 0; n < 40; n++) search(`word${n}`, idx); // more distinct words than the memo holds
+    for (const q of QUERIES)
+      for (const o of OPTS) {
+        const fresh = createIndex(NAMES, (x) => x);
+        assert.deepEqual(strip(search(q, idx, o)), strip(search(q, fresh, o)), `${q} ${JSON.stringify(o)}`);
+      }
+  }
 });

@@ -183,7 +183,9 @@ Three phases, and the row text is not touched until the last one.
    too short, too many of the query's letters are missing from it, or the start
    of the word that edit distance would compare holds too many letters the query
    lacks, or lacks too many it has. On uFuzzy's 84,000-word vocabulary, the last
-   check spares edit distance nine words in ten of those that reach it.
+   check spares edit distance nine words in ten of those that reach it. The
+   answer is memoized on the index, 32 words deep: typing the second word of a
+   query resolves nothing but that word, and a backspace resolves nothing.
 2. **Walk the postings.** Each vocabulary word points at the rows containing it
    and the position it occupies there. One pass over the matched postings both
    selects the candidate rows and records, per query word, the best score and
@@ -234,7 +236,7 @@ does all three.
 
 - One text field per index. No weights, no multi-field, no stemming, no stop
   words.
-- The index is built synchronously and held in memory: 29 MB and ~660 ms at
+- The index is built synchronously and held in memory: 19 MB and ~110 ms at
   53 k rows. Fine on load, not something to redo per keystroke.
 - Latency tracks the number of **distinct words**, not the number of rows. Five
   times the rows costs almost nothing; twenty-five times the vocabulary costs 7×.

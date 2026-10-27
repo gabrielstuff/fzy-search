@@ -121,12 +121,13 @@ export type Key<Item> = string | ((row: Item) => string) | null | undefined;
 // What createIndex() really builds. The public FzyIndex type shows four fields; the
 // rest is the inverted index and the scratch buffers search() reuses between calls.
 type Posting = number[]; // flat (rowId, wordPos) pairs
+type Hit = { posts: Posting[]; scores: number[] }; // a query word resolved: postings and their scores
 type Normalized = { text: string; map: number[] };
 type Index<Item> = FzyIndex<Item> & {
   items: Item[];
   keys: (string | number)[] | null;
   texts: string[];
-  words: Int32Array[]; // word boundaries, flat [start, end, ...]
+  letters: Int32Array; // letters and digits per row, for minCoverage
   vocab: Map<string, Posting>; // word -> postings
   vWord: string[]; // the vocabulary again, as parallel arrays,
   vPost: Posting[]; // so vocabHits is a loop over
@@ -136,6 +137,7 @@ type Index<Item> = FzyIndex<Item> & {
   _hits: Int32Array;
   _seen: Int32Array;
   _gen: number;
+  _memo: Map<string, Hit>;
   _maps: (Normalized | undefined)[];
   _pool?: { score: Float32Array; pos: Int32Array }[];
 };
@@ -175,23 +177,9 @@ function fold(string: string, map?: number[]): string {
   return text;
 }
 
-// Word boundaries as a flat [start, end, start, end, ...] array.
-function bounds(text: string): number[] {
-  const out: number[] = [];
-  let start = -1;
-  for (let i = 0; i <= text.length; i++) {
-    const c = i < text.length ? text.charCodeAt(i) : 32;
-    const alnum = (c >= 97 && c <= 122) || (c >= 48 && c <= 57);
-    if (alnum && start < 0) start = i;
-    else if (!alnum && start >= 0) {
-      out.push(start, i);
-      start = -1;
-    }
-  }
-  return out;
-}
-
-const tokenize = (text: string): string[] => text.match(/[a-z0-9]+/g) ?? [];
+// The words of a folded text: runs of a-z0-9. The index knows no other characters.
+const WORD = /[a-z0-9]+/g;
+const tokenize = (text: string): string[] => text.match(WORD) ?? [];
 
 // Bitmask of the a-z letters present in `text`, or in its first `end` characters (bit 26 = any digit).
 function charMask(text: string, end = text.length): number {
@@ -359,20 +347,22 @@ export function createIndex<Item>(
   const items = (keys ? keys.map((k) => (source as Record<string, Item>)[k]) : source) as Item[];
   const n = items.length;
   const texts: string[] = new Array(n),
-    words: Int32Array[] = new Array(n);
+    letters = new Int32Array(n);
   const vocab = new Map<string, Posting>();
   for (let i = 0; i < n; i++) {
     const t = fold(String(getText(items[i])));
     texts[i] = t;
-    const b = bounds(t);
-    words[i] = Int32Array.from(b); // offsets, not substrings: ~2.5x less heap
-    for (let k = 0; k < b.length; k += 2) {
-      const w = t.slice(b[k], b[k + 1]);
+    const ws = tokenize(t);
+    let len = 0;
+    for (let k = 0; k < ws.length; k++) {
+      const w = ws[k];
+      len += w.length;
       const post = vocab.get(w);
       // (row, word position) pairs; only the first occurrence in a row is kept
-      if (post === undefined) vocab.set(w, [i, k >> 1]);
-      else if (post[post.length - 2] !== i) post.push(i, k >> 1);
+      if (post === undefined) vocab.set(w, [i, k]);
+      else if (post[post.length - 2] !== i) post.push(i, k);
     }
+    letters[i] = len;
   }
   // Vocabulary as parallel arrays, so resolving a query word is a tight loop
   // over primitives instead of a Map iteration.
@@ -393,7 +383,7 @@ export function createIndex<Item>(
     items,
     keys,
     texts,
-    words,
+    letters,
     vocab,
     vWord,
     vPost,
@@ -403,6 +393,7 @@ export function createIndex<Item>(
     _hits: new Int32Array(n),
     _seen: new Int32Array(n),
     _gen: 0,
+    _memo: new Map(),
     _maps: [],
   };
   return index;
@@ -410,21 +401,25 @@ export function createIndex<Item>(
 
 // --- scoring cascade ------------------------------------------------------
 // Tiers never overlap: exact 1000 > prefix 900 > substring 800 > per-word <= 170.
-// Runs once per vocabulary word. `tol`, `qMask` and the switches are resolved once per query word
-// by the caller and passed as plain arguments, not read off the options object here.
+// Runs once per vocabulary word. `tol`, the letter masks and the switches are resolved once per query
+// word by the caller and passed as plain arguments, not read off the options object here.
 function wordScore(
   q: string,
   qMask: number,
   w: string,
+  wMask: number,
   tol: number,
   prefix: boolean,
   infix: boolean,
   keepInitial: boolean,
 ): number {
-  if (w === q) return 100;
-  if (prefix && w.length > q.length && w.startsWith(q)) return 90 - Math.min(9, w.length - q.length);
-  const at = infix && q.length >= 3 ? w.indexOf(q) : -1; // no infix match on 1-2 letters:
-  if (at > 0) return 70; // "de" must not match "monde"
+  // A word that lacks a letter of `q` is not `q`, does not start with it and does not contain it. The
+  // string tiers are tried on the words that have every letter, which is most of the ones that match one.
+  if (!(qMask & ~wMask)) {
+    if (w === q) return 100;
+    if (prefix && w.length > q.length && w.startsWith(q)) return 90 - Math.min(9, w.length - q.length);
+    if (infix && q.length >= 3 && w.indexOf(q) > 0) return 70; // no infix match on 1-2 letters: "de" must not match "monde"
+  }
   if (tol === 0) return 0;
   if (keepInitial && w.charCodeAt(0) !== q.charCodeAt(0)) return 0;
   // The edit distance is taken against the start of `w`, `q.length + tol` letters at most. Each edit
@@ -449,24 +444,36 @@ function wordScore(
 //     edits, so a letter of `q` that the word does not contain at all costs at
 //     least one edit. More than `tol` such letters and the word is out.
 // This is what keeps a 46 000-word vocabulary off the hot path.
-function vocabHits<Item>(q: string, index: Index<Item>, o: Options = DEFAULTS): { posts: Posting[]; scores: number[] } {
-  const { vWord, vPost, vMask, vLen } = index;
+//
+// Memoized on the index. A query is typed one letter at a time, and every keystroke in its second
+// word resolves the first word again, to the same answer; a backspace asks for the previous one. The
+// key holds the word and everything else the answer depends on. A small ring: the postings arrays are
+// shared with the index, so an entry costs its scores and little else.
+function vocabHits<Item>(q: string, index: Index<Item>, o: Options): Hit {
   const tol = budget(q, o),
     { prefix, infix, keepInitial } = o;
+  const key = `${tol}${+prefix}${+infix}${+keepInitial}${q}`,
+    memo = index._memo;
+  let hit = memo.get(key);
+  if (hit) return hit;
+  const { vWord, vPost, vMask, vLen } = index;
   const qMask = charMask(q),
     minLen = q.length - tol;
   const posts: Posting[] = [],
     scores: number[] = [];
   for (let k = 0; k < vWord.length; k++) {
     if (vLen[k] < minLen) continue;
-    if (popcount(qMask & ~vMask[k]) > tol) continue;
-    const s = wordScore(q, qMask, vWord[k], tol, prefix, infix, keepInitial);
+    const m = vMask[k];
+    if (popcount(qMask & ~m) > tol) continue;
+    const s = wordScore(q, qMask, vWord[k], m, tol, prefix, infix, keepInitial);
     if (s > 0) {
       posts.push(vPost[k]);
       scores.push(s);
     }
   }
-  return { posts, scores };
+  if (memo.size === 32) memo.delete(memo.keys().next().value as string);
+  memo.set(key, (hit = { posts, scores }));
+  return hit;
 }
 
 // Scratch buffers, one pair per query word, reused across searches.
@@ -484,14 +491,6 @@ function unglue(q: string, vocab: Map<string, Posting>): [string, string] | null
     if (vocab.has(a) && vocab.has(b)) return [a, b];
   }
   return null;
-}
-
-// Letters and digits in row `i`: what a query has to account for to "cover" it.
-function letters<Item>(index: Index<Item>, i: number): number {
-  const w = index.words[i];
-  let n = 0;
-  for (let k = 0; k < w.length; k += 2) n += w[k + 1] - w[k];
-  return n || 1;
 }
 
 // Normalize + collapse whitespace, shared by search() and ranges(). Non-string
@@ -559,7 +558,7 @@ export function search<Item>(
 
   // 1. resolve each query word against the vocabulary — once, not per row
   const qWords: string[] = [],
-    matches: { posts: Posting[]; scores: number[] }[] = [];
+    matches: Hit[] = [];
   for (const q of raw) {
     const hit = vocabHits(q, index, o);
     const parts = hit.posts.length ? null : unglue(q, index.vocab);
@@ -634,7 +633,7 @@ export function search<Item>(
       }
     }
     if (score < o.minScore) continue;
-    if (o.minCoverage > 0 && covered / letters(index, i) < o.minCoverage) continue;
+    if (o.minCoverage > 0 && covered / (index.letters[i] || 1) < o.minCoverage) continue;
     if (capped && out.length === limit && score <= floor) continue;
     const row = result(index, i, score);
     if (!capped) {
@@ -678,15 +677,15 @@ export function ranges<Item>(query: string, fzyIndex: FzyIndex<Item>, i: number)
   const at = text.indexOf(qText);
   if (at >= 0) push(at, at + qText.length);
   else {
-    const b = bounds(text);
+    const words = [...text.matchAll(WORD)];
     for (const q of tokenize(qText)) {
       const qMask = charMask(q);
       let best = 0,
         span: [number, number] | null = null;
-      for (let bi = 0; bi < b.length; bi += 2) {
-        const off = b[bi],
-          w = text.slice(off, b[bi + 1]);
-        const s = wordScore(q, qMask, w, tolerance(q.length), true, true, false);
+      for (const m of words) {
+        const off = m.index,
+          w = m[0];
+        const s = wordScore(q, qMask, w, charMask(w), tolerance(q.length), true, true, false);
         if (s > best) {
           best = s;
           const k = w.indexOf(q);
