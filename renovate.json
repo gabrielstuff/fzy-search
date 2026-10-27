@@ -26,11 +26,16 @@
       "semanticCommitScope": "deps"
     },
     {
-      "description": "Tooling the CI uses to check and preview the package. It never ships.",
+      "description": "Tooling the CI uses to check, build and preview the package, in every workspace package and the pnpm catalog. It never ships.",
       "matchManagers": ["npm"],
-      "matchFileNames": ["package.json"],
+      "matchFileNames": ["package.json", "packages/*/package.json", "apps/*/package.json", "pnpm-workspace.yaml"],
       "groupName": "dev tooling",
       "semanticCommitScope": "deps-dev"
+    },
+    {
+      "description": "Vite+ and the Vite core it overrides move together: one PR, never one without the other.",
+      "matchPackageNames": ["vite-plus", "@voidzero-dev/vite-plus-core", "voidzero-dev/setup-vp"],
+      "groupName": "vite-plus"
     },
     {
       "description": "The benchmark contenders are not part of the package: monthly, and kept apart from the tooling.",

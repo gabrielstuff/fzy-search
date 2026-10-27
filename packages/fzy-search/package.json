@@ -1,0 +1,63 @@
+{
+  "name": "fzy-search",
+  "version": "0.1.1",
+  "description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.6 kB, no dependencies",
+  "keywords": [
+    "accent",
+    "autocomplete",
+    "browser",
+    "client-side",
+    "damerau",
+    "diacritics",
+    "filter",
+    "fuzzy",
+    "highlight",
+    "index",
+    "levenshtein",
+    "match",
+    "matching",
+    "search",
+    "sort",
+    "transposition",
+    "typeahead",
+    "unicode"
+  ],
+  "homepage": "https://gabrielstuff.github.io/fzy-search/",
+  "bugs": "https://github.com/gabrielstuff/fzy-search/issues",
+  "license": "MIT",
+  "author": {
+    "name": "Gabriel Delattre",
+    "url": "https://github.com/gabrielstuff"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gabrielstuff/fzy-search.git",
+    "directory": "packages/fzy-search"
+  },
+  "funding": "https://github.com/sponsors/gabrielstuff",
+  "files": [
+    "CHANGELOG.md",
+    "dist",
+    "llms.txt",
+    "skills"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.0",
+    "@types/node": "catalog:",
+    "publint": "^0.3.25",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

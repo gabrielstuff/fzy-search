@@ -9,7 +9,8 @@ import { readFileSync } from 'node:fs';
 export const MARKER = '<!-- fzy-size -->';
 
 const size = (value) => {
-  if (!Number.isSafeInteger(value) || value < 1 || value > 1e6) throw new Error(`not a size in bytes: ${JSON.stringify(value)}`);
+  if (!Number.isSafeInteger(value) || value < 1 || value > 1e6)
+    throw new Error(`not a size in bytes: ${JSON.stringify(value)}`);
   return value;
 };
 const kb = (bytes) => `${(bytes / 1024).toFixed(2)} kB`;

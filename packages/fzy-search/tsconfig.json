@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    // `lib` is the ceiling on built-ins: index.ts ships as written, so nothing newer than
+    // ES2020 (`.at()`, `Object.hasOwn`, `structuredClone`) may type-check. `vp pack` enforces
+    // the same ceiling on syntax with `target: 'es2020'`.
+    "target": "es2020",
+    "lib": ["es2020"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "moduleDetection": "force",
+    "types": ["node"],
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUnusedLocals": true,
+    "declaration": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true
+  },
+  "include": ["src", "tests"]
+}

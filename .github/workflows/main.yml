@@ -12,7 +12,28 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # The full suite on the supported LTS lines and the current release. `engines.node` is >=22.
+  # Static checks and what would be published: format, lint and type-check in one pass (`vp check`),
+  # then the package build, which runs publint and attw itself, the size budget and the docs drift.
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Installs Vite+, Node and the pinned pnpm, then `vp install`, with the pnpm store cached.
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
+        with:
+          node-version: '24'
+          cache: true
+      - run: vp check
+      - run: vp run fzy-search#build
+      - run: vp run fzy-search#size
+      - run: vp run fzy-search#docs
+
+  # The unit tests on the supported LTS lines and the current release. `engines.node` is >=22.
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -21,18 +42,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        node-version: [26, 24, 22]
+        node-version: ['26', '24', '22']
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm test
+          cache: true
+      - run: vp test
 
-  # What would be published: the package lints clean, ships only what it should, and stays in budget.
-  package:
+  # What a consumer installs, on every runtime the readme names: pack, install the tarball in an
+  # empty project, import it by name from Node, Bun and Deno.
+  consumers:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -41,71 +64,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run check:package
-      - run: npm run check:size
-      - run: npm run check:docs
-      - run: npm run lint
-      - run: npm pack --dry-run
-
-  # The readme sells a client-side library, so it is not only a Node one: the same suite runs on
-  # Bun and Deno through their node:test support.
-  runtimes:
-    name: tests (${{ matrix.runtime }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        runtime: [bun, deno]
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - if: matrix.runtime == 'bun'
-        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
-      - if: matrix.runtime == 'bun'
-        run: bun test ./test.js
-      - if: matrix.runtime == 'deno'
-        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-      - if: matrix.runtime == 'deno'
-        run: deno test test.js
-
-  # What a consumer installs: pack, install the tarball in an empty project, import every export.
-  tarball:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-      - run: node scripts/test-tarball.mjs
-
-  # index.d.ts is hand-written: test/types.test-d.ts pins every export, option and result shape
-  # against it, and the expect-error lines pin what must not compile.
-  types:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --ignore-scripts
-      - run: npm run check:types
+          node-version: '24'
+          cache: true
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+      - run: vp run fzy-search#build
+      - run: node scripts/test-tarball.mjs --runtimes node,bun,deno

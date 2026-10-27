@@ -4,15 +4,19 @@
 
 1. Open a pull request. Its title is a Conventional Commit (`feat:`, `fix:`, `perf:`, …): the PR title
    check enforces it, because the title becomes the commit message on squash-merge.
-2. CI runs the suite on Node 22, 24 and 26 and on Bun and Deno, type tests, publint, the size budget and
-   `npm pack`. The Preview workflow comments an install command for the branch (pkg.pr.new).
+2. CI runs `vp check` (format, lint, type-check), the package build with publint and attw, the size
+   budget and the docs drift, the tests on Node 22, 24 and 26, and the packed tarball on Node, Bun and
+   Deno. The Preview workflow comments an install command for the branch (pkg.pr.new), the Size workflow
+   a comment with the bundle-size delta. `vp run ready` runs the same checks locally.
 3. Merge. Nothing else happens: there is no release PR and no bot.
-4. To release, run **Actions, Release, Run workflow** on `main` (or `npm run release` locally). The
-   version comes from the commits since the last tag (git-cliff: `feat:` minor, `fix:`/`perf:` patch,
-   `feat!:` major); the `bump` input overrides it. The job commits `CHANGELOG.md` and the version,
-   tags `vx.y.z`, runs the tests, `npm publish --provenance`, and only then pushes the commit and the
-   tag and creates the GitHub Release. Tick `dry-run` first to see the version and the notes without
-   publishing. Never edit the version by hand.
+4. To release, run **Actions, Release, Run workflow** on `main` (or `pnpm release` locally). What is
+   released is `packages/fzy-search`. The version comes from the commits since the last tag that touch
+   the library (git-cliff, `include_paths`: `feat:` minor, `fix:`/`perf:` patch, `feat!:` major); the
+   `bump` input overrides it. The job writes `packages/fzy-search/CHANGELOG.md` and the version, commits
+   and tags `vx.y.z`, builds, tests, checks the tarball, runs `npm publish --provenance` from the package
+   directory, and only then pushes the commit and the tag and creates the GitHub Release. Tick `dry-run`
+   first to see the version and the notes without publishing, or run `node scripts/release.mjs notes` on
+   any checkout. Never edit the version by hand.
 
 `feat:` is a minor, `fix:` and `perf:` a patch, `feat!:` (or a `BREAKING CHANGE:` footer) a major. Below 1.0 there is no major: a breaking change bumps
 the minor, and 1.0.0 is a decision made with the `bump` input once the API has settled.

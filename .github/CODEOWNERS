@@ -6,3 +6,6 @@
 /scripts/release.mjs @gabrielstuff
 /renovate.json @gabrielstuff
 /package.json @gabrielstuff
+/packages/fzy-search/package.json @gabrielstuff
+/pnpm-workspace.yaml @gabrielstuff
+/vite.config.ts @gabrielstuff

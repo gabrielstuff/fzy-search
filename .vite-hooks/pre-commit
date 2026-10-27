@@ -1,0 +1,3 @@
+#!/bin/sh
+# Format, lint and type-check what is staged. `vp hooks disable` turns it off in a clone.
+vp staged

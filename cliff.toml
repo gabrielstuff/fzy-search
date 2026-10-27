@@ -1,5 +1,5 @@
-# Version bump and release notes. `npm run release` and the Release workflow run
-# `--bumped-version` to name the release, `--output CHANGELOG.md` to write the changelog and
+# Version bump and release notes. `pnpm release` and the Release workflow run
+# `--bumped-version` to name the release, `--prepend packages/fzy-search/CHANGELOG.md` to write the changelog and
 # `--latest --strip all` for the GitHub Release body. Conventional Commits are the input: the
 # PR-title check keeps them well formed, because a squash merge turns the title into the commit.
 # https://git-cliff.org/docs/configuration
@@ -16,7 +16,7 @@ body = """
 {% for group, commits in commits | group_by(attribute="group") %}
 ### {{ group | striptags | trim }}
 {% for commit in commits %}
-* {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }} ([{{ commit.id | truncate(length=7, end="") }}]({{ self::repo() }}/commit/{{ commit.id }}))
+* {% if commit.breaking %}**BREAKING** {% endif %}{% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }} ([{{ commit.id | truncate(length=7, end="") }}]({{ self::repo() }}/commit/{{ commit.id }}))
 {%- endfor %}
 {% endfor %}
 """
@@ -27,6 +27,18 @@ postprocessors = [
 ]
 
 [git]
+# Only commits that touch the library are release notes and version bumps. The root paths are where
+# the library lived before it moved to packages/fzy-search; they keep those commits counted.
+include_paths = [
+  "packages/fzy-search/**",
+  "index.js",
+  "index.d.ts",
+  "readme.md",
+  "llms.txt",
+  "skills/**",
+  "test.js",
+  "test/**",
+]
 conventional_commits = true
 filter_unconventional = true
 split_commits = false

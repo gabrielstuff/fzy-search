@@ -1,6 +1,6 @@
 // fzy resolves each query word against the vocabulary, so its cost grows with the
 // number of DISTINCT words, not with the number of rows. This measures that.
-import { createIndex, search } from '../index.js';
+import { createIndex, search } from './lib.js';
 
 const S1 = ['ma', 'in', 'tra', 'pro', 'sci', 'com', 'ges', 'don', 'ele', 'bio', 'geo', 'psy', 'lit', 'phy', 'chi', 'eco'];
 const S2 = ['nage', 'forma', 'duc', 'lo', 'tec', 'mer', 'tion', 'nee', 'ctri', 'logi', 'graphi', 'cholo', 'tera', 'sique', 'mie', 'nomi'];

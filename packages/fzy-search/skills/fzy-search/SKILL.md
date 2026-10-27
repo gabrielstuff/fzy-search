@@ -39,21 +39,29 @@ Same index, tightened. This is the preset for "did the user mean Rennes?", not f
 
 ```js
 const cities = createIndex(['Rennes', 'Avignon', 'Clermont-Ferrand']);
-const typo = { prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8, limit: 1 };
+const typo = {
+  prefix: false,
+  infix: false,
+  maxEdits: 1,
+  minTypoLength: 6,
+  keepInitial: true,
+  minCoverage: 0.8,
+  limit: 1,
+};
 search('renned', cities, typo); // Rennes
 search('ferrandi', cities, typo); // [] : 8 of the 15 letters of Clermont-Ferrand
 ```
 
-| Option | Default | What it does |
-| --- | --- | --- |
-| `limit` | `Infinity` | Maximum results. |
-| `prefix` | `true` | `false`: `par` no longer finds `paris`. |
-| `infix` | `true` | `false`: a query word no longer matches inside a longer word. |
-| `maxEdits` | `Infinity` | Caps edits per word; `0` turns typo matching off. |
-| `minTypoLength` | `0` | Words shorter than this are never edit-matched. |
-| `keepInitial` | `false` | An edit-matched word must start with the query word's letter. |
-| `minCoverage` | `0` | `0..1`: share of the row's letters the query must account for. |
-| `minScore` | `-Infinity` | Drop rows scoring below this. |
+| Option          | Default     | What it does                                                   |
+| --------------- | ----------- | -------------------------------------------------------------- |
+| `limit`         | `Infinity`  | Maximum results.                                               |
+| `prefix`        | `true`      | `false`: `par` no longer finds `paris`.                        |
+| `infix`         | `true`      | `false`: a query word no longer matches inside a longer word.  |
+| `maxEdits`      | `Infinity`  | Caps edits per word; `0` turns typo matching off.              |
+| `minTypoLength` | `0`         | Words shorter than this are never edit-matched.                |
+| `keepInitial`   | `false`     | An edit-matched word must start with the query word's letter.  |
+| `minCoverage`   | `0`         | `0..1`: share of the row's letters the query must account for. |
+| `minScore`      | `-Infinity` | Drop rows scoring below this.                                  |
 
 Every option defaults to the behaviour before it existed, so passing none changes nothing.
 

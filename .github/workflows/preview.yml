@@ -31,12 +31,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      # No dependency cache: this job's output is what people install.
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
-          node-version: 24
-          cache: npm
-      # Installed from the lockfile, not run through npx: this job's output is what people install.
-      - run: npm ci --ignore-scripts
+          node-version: '24'
+          cache: false
+      - run: vp run fzy-search#build
       # --previewVersion rewrites the version to 0.0.0-preview-<sha>, so a preview can never satisfy
       # a real semver range or collide with a published release in someone's lockfile.
-      - run: npm exec -- pkg-pr-new publish --previewVersion --commentWithSha --packageManager=npm --no-template
+      - run: node_modules/.bin/pkg-pr-new publish ./packages/fzy-search --previewVersion --commentWithSha --packageManager=npm --no-template

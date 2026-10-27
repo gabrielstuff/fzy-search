@@ -1,24 +1,24 @@
 // Type tests: `tsc -p test` must pass, and every `@ts-expect-error` line must still be an error.
 // index.d.ts is hand-written, so this file is what stops it drifting from index.js.
 import {
-	createIndex,
-	highlight,
-	normalize,
-	osa,
-	ranges,
-	search,
-	tolerance,
-	type FzyIndex,
-	type Key,
-	type SearchOptions,
-	type SearchResult,
-} from '../index.js';
+  createIndex,
+  highlight,
+  normalize,
+  osa,
+  ranges,
+  search,
+  tolerance,
+  type FzyIndex,
+  type Key,
+  type SearchOptions,
+  type SearchResult,
+} from '../src/index.ts';
 
-type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends (<T>() => T extends B ? 1 : 2) ? true : false;
+type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 const assertType = <_T extends true>() => {};
 
-type Row = {name: string; meta: {title: string}};
-const rows: Row[] = [{name: 'Paris', meta: {title: 'Ville'}}];
+type Row = { name: string; meta: { title: string } };
+const rows: Row[] = [{ name: 'Paris', meta: { title: 'Ville' } }];
 
 // createIndex: strings, rows with a key, rows with a path or a function, and an object map
 const strings = createIndex(['Paris', 'Rennes']);
@@ -29,7 +29,7 @@ createIndex(rows, 'meta.title');
 createIndex(rows, (row) => row.name);
 createIndex(rows, null);
 createIndex(rows, undefined);
-const map = createIndex({a: 'Paris', b: 'Rennes'});
+const map = createIndex({ a: 'Paris', b: 'Rennes' });
 assertType<Equal<typeof map, FzyIndex<string>>>();
 
 // @ts-expect-error a number is not a source
@@ -52,25 +52,25 @@ hit.score = 1;
 
 // every option, and the defaults documented in index.d.ts
 const options: SearchOptions = {
-	limit: 20,
-	prefix: false,
-	infix: false,
-	maxEdits: 1,
-	minTypoLength: 4,
-	keepInitial: true,
-	minCoverage: 1,
-	minScore: 100,
+  limit: 20,
+  prefix: false,
+  infix: false,
+  maxEdits: 1,
+  minTypoLength: 4,
+  keepInitial: true,
+  minCoverage: 1,
+  minScore: 100,
 };
 search('par', byName, options);
 search('par', byName, {});
-search('par', byName, {limit: Infinity});
+search('par', byName, { limit: Infinity });
 
 // @ts-expect-error an unknown option is a typo, not a silent no-op
-search('par', byName, {maxEdit: 1});
+search('par', byName, { maxEdit: 1 });
 // @ts-expect-error limit is a number
-search('par', byName, {limit: '20'});
+search('par', byName, { limit: '20' });
 // @ts-expect-error keepInitial is a boolean
-search('par', byName, {keepInitial: 1});
+search('par', byName, { keepInitial: 1 });
 // @ts-expect-error the query is a string
 search(3, byName);
 // @ts-expect-error the second argument is an index, not the rows
@@ -89,7 +89,7 @@ highlight('par', byName, 'a');
 // the helpers
 assertType<Equal<ReturnType<typeof tolerance>, number>>();
 assertType<Equal<ReturnType<typeof osa>, number>>();
-assertType<Equal<ReturnType<typeof normalize>, {text: string; map: number[]}>>();
+assertType<Equal<ReturnType<typeof normalize>, { text: string; map: number[] }>>();
 osa('sicences', 'sciences', 2);
 // @ts-expect-error all three arguments are required
 osa('a', 'b');

@@ -3,7 +3,7 @@
 // Any result is a row that matched only half the query. Lower is better.
 import { getCorpus, keyOf } from './corpora.js';
 import { adapters } from './adapters.js';
-import { createIndex } from '../index.js';
+import { createIndex } from './lib.js';
 import { writeFileSync } from 'node:fs';
 
 const NAME = process.argv[2] || 'synthetic';

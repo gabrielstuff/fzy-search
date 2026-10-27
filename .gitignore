@@ -1,6 +1,10 @@
 node_modules
+dist
 *.log
 .size-*
+*.tgz
 bench/data
 bench/results-*.json
 bench/noise-*.json
+.vite-hooks/_
+.DS_Store

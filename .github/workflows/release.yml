@@ -3,7 +3,8 @@ name: Release
 # A release is one click: Actions, Release, Run workflow, on main. The version comes from the
 # Conventional Commits since the last tag (git-cliff), or from the `bump` input. Bump, tag and publish
 # are one job on purpose: a tag pushed with GITHUB_TOKEN does not trigger another workflow, so a
-# separate tag-triggered publish job would never run. The same script runs locally: `npm run release`.
+# separate tag-triggered publish job would never run. The same script runs locally: `pnpm release`.
+# What is released is packages/fzy-search, and only commits that touch it count (cliff.toml).
 #
 # Nothing reaches the remote until npm has accepted the package: `prepare` commits and tags locally,
 # `push` runs after `npm publish`. Publishing uses npm trusted publishing (OIDC), so no npm token is
@@ -47,11 +48,14 @@ jobs:
         with:
           fetch-depth: 0 # git-cliff reads every tag and commit
           persist-credentials: false
+      # Vite+, Node 24 and the pinned pnpm, then `vp install`. No dependency cache in the job that holds
+      # the publish credential: a poisoned cache entry would otherwise reach the published package.
+      # pnpm runs no install script that pnpm-workspace.yaml does not allow.
       # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14; Node 24 ships a recent enough npm.
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
-          node-version: 24
-      - run: npm ci --ignore-scripts
+          node-version: '24'
+          cache: false
       - name: Check the npm version floor
         run: |
           npm --version
@@ -66,8 +70,13 @@ jobs:
           if [ "$DRY_RUN" = true ]; then args+=(--dry-run); fi
           node scripts/release.mjs prepare "${args[@]}"
       - if: ${{ !inputs.dry-run }}
-        run: npm test
+        run: vp run fzy-search#build
       - if: ${{ !inputs.dry-run }}
+        run: vp test
+      - if: ${{ !inputs.dry-run }}
+        run: node scripts/test-tarball.mjs
+      - if: ${{ !inputs.dry-run }}
+        working-directory: packages/fzy-search
         run: npm publish --provenance --access public
       - name: Push the release commit and the tag
         if: ${{ !inputs.dry-run }}
@@ -79,5 +88,5 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="v$(node -p "require('./package.json').version")"
-          gh release create "$tag" --verify-tag --title "$tag" --notes "$(npx --no-install git-cliff --latest --strip all)"
+          tag="v$(node -p "require('./packages/fzy-search/package.json').version")"
+          gh release create "$tag" --verify-tag --title "$tag" --notes "$(node_modules/.bin/git-cliff --latest --strip all)"
