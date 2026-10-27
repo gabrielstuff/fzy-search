@@ -28,15 +28,18 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           path: base
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      - uses: voidzero-dev/setup-vp@cab1ab9eaff52d4857875f4f2c016e36af8f2c76 # v1.22.0
         with:
-          node-version: 24
-          cache: npm
-      - run: npm ci --ignore-scripts
+          node-version: '24'
+          cache: true
+      # Both sides are measured from source: esbuild strips the types and minifies, which lands within a
+      # few bytes of the built dist/ (the delta is what matters here), without building the base.
+      # A base from before the monorepo has the library at index.js.
       - name: Measure the pull request and its base
         run: |
-          node scripts/size.mjs --json > head.json
-          node scripts/size.mjs base/index.js --json > base.json
+          node scripts/size.mjs packages/fzy-search/src/index.ts --json > head.json
+          if [ -f base/packages/fzy-search/src/index.ts ]; then base=base/packages/fzy-search/src/index.ts; else base=base/index.js; fi
+          node scripts/size.mjs "$base" --json > base.json
           node -e 'const f = (p) => JSON.parse(require("fs").readFileSync(p, "utf8")); require("fs").writeFileSync("size.json", JSON.stringify({ head: f("head.json"), base: f("base.json") }))'
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

@@ -1,69 +1,28 @@
 {
-	"name": "fzy-search",
-	"version": "0.1.1",
-	"description": "Fuzzy filter and sort for client-side lists — accent-folding, transposition-tolerant, 2.6 kB, no dependencies",
-	"license": "MIT",
-	"repository": {
-		"type": "git",
-		"url": "git+https://github.com/gabrielstuff/fzy-search.git"
-	},
-	"funding": "https://github.com/sponsors/gabrielstuff",
-	"author": {
-		"name": "Gabriel Delattre",
-		"url": "https://github.com/gabrielstuff"
-	},
-	"type": "module",
-	"exports": {
-		"types": "./index.d.ts",
-		"default": "./index.js"
-	},
-	"sideEffects": false,
-	"engines": {
-		"node": ">=22"
-	},
-	"scripts": {
-		"test": "node --test test.js",
-		"check:types": "tsc -p test",
-		"check:package": "publint && attw --pack . --profile esm-only",
-		"check:size": "node scripts/size.mjs",
-		"check:docs": "node scripts/check-docs.mjs",
-		"lint": "oxlint -c oxlint.json index.js test.js test scripts",
-		"release": "node scripts/release.mjs",
-		"bench": "npm ci --prefix bench --ignore-scripts && node --expose-gc bench/run.js",
-		"bench:all": "npm ci --prefix bench --ignore-scripts && bench/all.sh"
-	},
-	"files": [
-		"index.js",
-		"index.d.ts",
-		"skills"
-	],
-	"keywords": [
-		"fuzzy",
-		"search",
-		"filter",
-		"sort",
-		"match",
-		"matching",
-		"autocomplete",
-		"typeahead",
-		"levenshtein",
-		"damerau",
-		"transposition",
-		"accent",
-		"diacritics",
-		"unicode",
-		"highlight",
-		"client-side",
-		"browser",
-		"index"
-	],
-	"devDependencies": {
-		"@arethetypeswrong/cli": "^0.18.0",
-		"esbuild": "^0.25.0",
-		"git-cliff": "^2.0.0",
-		"oxlint": "^1.0.0",
-		"pkg-pr-new": "^0.0.92",
-		"publint": "^0.3.25",
-		"typescript": "^5.9.0"
-	}
+  "name": "fzy-search-workspace",
+  "private": true,
+  "description": "The fzy-search monorepo: the library in packages/fzy-search, the playground in apps/playground.",
+  "type": "module",
+  "scripts": {
+    "release": "node scripts/release.mjs",
+    "bench": "npm ci --prefix bench --ignore-scripts && node --expose-gc bench/run.js",
+    "bench:all": "npm ci --prefix bench --ignore-scripts && bench/all.sh"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "git-cliff": "^2.0.0",
+    "pkg-pr-new": "^0.0.92",
+    "typescript": "catalog:",
+    "vite-plus": "catalog:"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.15.0",
+      "onFail": "download"
+    }
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
 }

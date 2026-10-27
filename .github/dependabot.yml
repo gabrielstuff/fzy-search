@@ -14,7 +14,7 @@ updates:
       default-days: 7
     open-pull-requests-limit: 0
     commit-message:
-      prefix: "ci(deps)"
+      prefix: 'ci(deps)'
     labels: [dependencies, security]
 
   - package-ecosystem: npm
@@ -25,7 +25,7 @@ updates:
       default-days: 7
     open-pull-requests-limit: 0
     commit-message:
-      prefix: "chore(deps-dev)"
+      prefix: 'chore(deps-dev)'
     labels: [dependencies, security]
 
   - package-ecosystem: npm
@@ -36,5 +36,5 @@ updates:
       default-days: 7
     open-pull-requests-limit: 0
     commit-message:
-      prefix: "chore(bench)"
+      prefix: 'chore(bench)'
     labels: [dependencies, security]

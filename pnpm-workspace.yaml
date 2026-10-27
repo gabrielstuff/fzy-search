@@ -1,0 +1,26 @@
+packages:
+  - apps/*
+  - packages/*
+
+# One version of each shared tool for every package, bumped in one place (Renovate reads catalogs).
+catalogMode: prefer
+
+catalog:
+  '@types/node': ^24
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@1.4.0
+  vite-plus: 1.4.0
+
+overrides:
+  vite@*: 'catalog:'
+
+peerDependencyRules:
+  allowAny:
+    - vite
+  allowedVersions:
+    vite: '*'
+
+# No dependency runs an install script unless it is allowed here. esbuild ships its binary as an
+# optional dependency, so its postinstall (a binary check) is not needed.
+allowBuilds:
+  esbuild: false

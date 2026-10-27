@@ -6,7 +6,7 @@ import fuzzysort from 'fuzzysort';
 import Fuse from 'fuse.js';
 import MiniSearch from 'minisearch';
 import FlexSearch from 'flexsearch';
-import { createIndex, search as fzySearch } from '../index.js';
+import { createIndex, search as fzySearch, LIB_PATH } from './lib.js';
 
 
 const deaccent = (s) =>
@@ -18,7 +18,7 @@ export const adapters = (key = 'name') => [
     name: 'fzy-search',
     build: (items) => createIndex(items, key),
     search: (h, q, limit) => fzySearch(q, h, { limit }).map((r) => r.item.id),
-    entry: `import {createIndex,search} from ${JSON.stringify(new URL('../index.js', import.meta.url).pathname)}; export {createIndex,search}`,
+    entry: `import {createIndex,search} from ${JSON.stringify(LIB_PATH)}; export {createIndex,search}`,
   },
   {
     name: 'match-sorter',

@@ -1,6 +1,6 @@
-import test from 'node:test';
+import { test } from 'vite-plus/test';
 import assert from 'node:assert/strict';
-import { createIndex, search, normalize, osa, tolerance, highlight, ranges } from './index.js';
+import { createIndex, search, normalize, osa, tolerance, highlight, ranges, type SearchOptions } from '../src/index.ts';
 
 const NAMES = [
   'Master Sciences de l’éducation parcours Recherche - Université de Lille',
@@ -10,9 +10,12 @@ const NAMES = [
   'CAP Pâtisserie - Lycée Henri-IV',
   'Master Science des données - EM Lyon',
 ];
-const idx = createIndex(NAMES.map((name, id) => ({ id, name })), (x) => x.name);
-const top = (q) => search(q, idx, { limit: 1 })[0]?.item.name;
-const all = (q) => search(q, idx).map((r) => r.item.name);
+const idx = createIndex(
+  NAMES.map((name, id) => ({ id, name })),
+  (x) => x.name,
+);
+const top = (q: string) => search(q, idx, { limit: 1 })[0]?.item.name;
+const all = (q: string) => search(q, idx).map((r) => r.item.name);
 
 test('normalize: accents, ligatures, apostrophes, case', () => {
   assert.equal(normalize('Œnologie').text, 'oenologie');
@@ -24,8 +27,8 @@ test('normalize: accents, ligatures, apostrophes, case', () => {
 test('normalize: index map points back at the source string', () => {
   const { text, map } = normalize('Œnologie');
   assert.equal(text.slice(0, 2), 'oe');
-  assert.equal(map[0], 0);          // both halves of the ligature
-  assert.equal(map[1], 0);          // point at the same source char
+  assert.equal(map[0], 0); // both halves of the ligature
+  assert.equal(map[1], 0); // point at the same source char
   assert.equal(map[2], 1);
 });
 
@@ -41,7 +44,7 @@ test('osa: returns tol+1 instead of the true distance when over budget', () => {
 });
 
 test('exact query beats prefix beats substring', () => {
-  const scores = (q) => search(q, idx)[0].score;
+  const scores = (q: string) => search(q, idx)[0].score;
   assert.ok(scores('cap patisserie - lycee henri-iv') === 1000);
   assert.ok(scores('cap patisserie') >= 900);
   assert.ok(scores('patisserie') >= 800);
@@ -75,7 +78,7 @@ test('every query word must match — no false positives', () => {
 });
 
 test('short words are matched strictly (no 1-edit slop on 3 letters)', () => {
-  assert.deepEqual(all('cop'), []);          // would be "cap" with 1 edit
+  assert.deepEqual(all('cop'), []); // would be "cap" with 1 edit
   assert.ok(all('cap').length > 0);
 });
 
@@ -97,8 +100,13 @@ test('results are sorted by descending score', () => {
 });
 
 test('limit truncates without changing the ranking', () => {
-  const full = search('master', idx).slice(0, 2).map((r) => r.i);
-  assert.deepEqual(search('master', idx, { limit: 2 }).map((r) => r.i), full);
+  const full = search('master', idx)
+    .slice(0, 2)
+    .map((r) => r.i);
+  assert.deepEqual(
+    search('master', idx, { limit: 2 }).map((r) => r.i),
+    full,
+  );
 });
 
 test('empty and punctuation-only queries return nothing', () => {
@@ -112,7 +120,7 @@ test('highlight wraps the matched spans in the ORIGINAL string', () => {
   const html = highlight('oenologie gestion', idx, i);
   assert.ok(html.includes('<mark>Œnologie</mark>'));
   assert.ok(html.includes('<mark>Gestion</mark>'));
-  assert.ok(html.includes('spécialité'));                 // untouched text kept, accents intact
+  assert.ok(html.includes('spécialité')); // untouched text kept, accents intact
 });
 
 test('highlight escapes HTML', () => {
@@ -145,7 +153,13 @@ test('accepts a plain array of strings', () => {
 });
 
 test('accepts an array of objects with a key name', () => {
-  const i = createIndex([{ id: 9, label: 'Sciences de l’éducation' }, { id: 4, label: 'Pâtisserie' }], 'label');
+  const i = createIndex(
+    [
+      { id: 9, label: 'Sciences de l’éducation' },
+      { id: 4, label: 'Pâtisserie' },
+    ],
+    'label',
+  );
   assert.equal(search('sicences', i, { limit: 1 })[0].item.id, 9);
 });
 
@@ -184,16 +198,23 @@ test('non-Latin queries fall back to substring matching instead of a silent miss
   // bounds() only knows a-z0-9, so a Cyrillic word is invisible to the index;
   // search() must not answer "no rows" to an exact substring.
   const i = createIndex(['Москва université', 'Kyiv institute']);
-  assert.deepEqual(search('москва', i).map((r) => r.item), ['Москва université']);
-  assert.equal(search('москв', i).length, 1);            // prefix
-  assert.equal(search('universit', i).length, 1);        // Latin part still word-matched
-  assert.deepEqual(search('zzzz', i), []);               // and still no false positives
+  assert.deepEqual(
+    search('москва', i).map((r) => r.item),
+    ['Москва université'],
+  );
+  assert.equal(search('москв', i).length, 1); // prefix
+  assert.equal(search('universit', i).length, 1); // Latin part still word-matched
+  assert.deepEqual(search('zzzz', i), []); // and still no false positives
 });
 
 test('search tolerates null, undefined and numeric queries', () => {
   const i = createIndex([{ n: 'Café' }, { n: 42 }], 'n');
+  // The types say string; plain JavaScript callers pass anything, and must not crash.
+  // @ts-expect-error null is not a string
   assert.deepEqual(search(null, i), []);
+  // @ts-expect-error undefined is not a string
   assert.deepEqual(search(undefined, i), []);
+  // @ts-expect-error a number is not a string
   assert.equal(search(42, i, { limit: 1 })[0].item.n, 42);
 });
 
@@ -206,7 +227,10 @@ test('top-N and full sort agree on ties', () => {
   // the full sort must return them in the same order.
   const i = createIndex(['Paris 1', 'Paris 2', 'Paris 3', 'Lyon']);
   const full = search('paris', i).map((r) => r.key);
-  assert.deepEqual(search('paris', i, { limit: 2 }).map((r) => r.key), full.slice(0, 2));
+  assert.deepEqual(
+    search('paris', i, { limit: 2 }).map((r) => r.key),
+    full.slice(0, 2),
+  );
 });
 
 test('osa matches beyond the old 80-char buffer cap', () => {
@@ -224,7 +248,9 @@ test('an ungluable glued word leaks nothing', () => {
 });
 
 test('createIndex rejects a non-object source', () => {
+  // @ts-expect-error a number is not a source
   assert.throws(() => createIndex(42, 'x'), TypeError);
+  // @ts-expect-error null is not a source
   assert.throws(() => createIndex(null), TypeError);
 });
 
@@ -237,13 +263,21 @@ test('createIndex rejects a non-object source', () => {
 // the list, so a caller that wants typo matching keeps the list to names a user would actually mean.
 const CITIES = ['Rennes', 'Avignon', 'Toulouse', 'Clermont-Ferrand', 'Narbonne', 'Besançon', 'Paris'];
 const cities = createIndex(CITIES);
-const names = (q, opts) => search(q, cities, opts).map((r) => r.item);
+const names = (q: string, opts?: SearchOptions) => search(q, cities, opts).map((r) => r.item);
 const TYPO = { prefix: false, infix: false, maxEdits: 1, minTypoLength: 6, keepInitial: true, minCoverage: 0.8 };
 
 test('options: passing none, or the defaults, changes nothing', () => {
   for (const q of ['sicences donnes', 'cloud', 'lille', 'cap', 'informatiquecloud']) {
     const plain = search(q, idx);
-    const explicit = search(q, idx, { prefix: true, infix: true, maxEdits: Infinity, minTypoLength: 0, keepInitial: false, minCoverage: 0, minScore: -Infinity });
+    const explicit = search(q, idx, {
+      prefix: true,
+      infix: true,
+      maxEdits: Infinity,
+      minTypoLength: 0,
+      keepInitial: false,
+      minCoverage: 0,
+      minScore: -Infinity,
+    });
     assert.deepEqual(explicit, plain, q);
   }
 });
@@ -265,7 +299,7 @@ test('infix: false stops matches inside a word', () => {
 });
 
 test('maxEdits caps the budget, 0 turns typos off', () => {
-  assert.deepEqual(names('toulousx', { prefix: false, infix: false }), ['Toulouse']);   // 1 edit, 8 letters: default budget is 2
+  assert.deepEqual(names('toulousx', { prefix: false, infix: false }), ['Toulouse']); // 1 edit, 8 letters: default budget is 2
   assert.deepEqual(names('toulouxx', { prefix: false, infix: false, maxEdits: 1 }), []); // 2 edits, capped at 1
   assert.deepEqual(names('toulouxx', { prefix: false, infix: false, maxEdits: 2 }), ['Toulouse']);
   assert.deepEqual(names('renned', { prefix: false, infix: false, maxEdits: 0 }), []);
@@ -296,7 +330,12 @@ test('minScore drops weak rows and keeps the strong ones', () => {
 });
 
 test('the typo preset: real misspellings in, ordinary words out', () => {
-  for (const [typo, city] of [['renned', 'Rennes'], ['aivgnon', 'Avignon'], ['toumouse', 'Toulouse'], ['besanconu', 'Besançon']]) {
+  for (const [typo, city] of [
+    ['renned', 'Rennes'],
+    ['aivgnon', 'Avignon'],
+    ['toumouse', 'Toulouse'],
+    ['besanconu', 'Besançon'],
+  ]) {
     assert.deepEqual(names(typo, { ...TYPO, limit: 1 }), [city], typo);
   }
   // each of these is within reach of a real city (Narbonne, Paris, Clermont-Ferrand) and is an ordinary word
@@ -306,6 +345,6 @@ test('the typo preset: real misspellings in, ordinary words out', () => {
 });
 
 test('options reach every word of a multi-word query', () => {
-  assert.deepEqual(names('renned avignon', { ...TYPO, minCoverage: 0 }).sort(), []);   // one row must hold all words
+  assert.deepEqual(names('renned avignon', { ...TYPO, minCoverage: 0 }).sort(), []); // one row must hold all words
   assert.deepEqual(names('clermont ferrand', { ...TYPO, minTypoLength: 0, maxEdits: 0 }), ['Clermont-Ferrand']);
 });
