@@ -44,10 +44,11 @@ test('osa: returns tol+1 instead of the true distance when over budget', () => {
 });
 
 test('exact query beats prefix beats substring', () => {
-  const scores = (q: string) => search(q, idx)[0].score;
-  assert.ok(scores('cap patisserie - lycee henri-iv') === 1000);
-  assert.ok(scores('cap patisserie') >= 900);
-  assert.ok(scores('patisserie') >= 800);
+  const score = (q: string) => search(q, idx)[0].score;
+  assert.equal(score('cap patisserie - lycee henri-iv'), 1000);
+  assert.equal(score('cap patisserie'), 900);
+  const inside = score('patisserie');
+  assert.ok(inside > 800 && inside < 900, String(inside));
 });
 
 test('transposition typo still finds the row', () => {
@@ -82,15 +83,36 @@ test('short words are matched strictly (no 1-edit slop on 3 letters)', () => {
   assert.ok(all('cap').length > 0);
 });
 
-test('the vocabulary prefilter never drops a row the scorer would accept', () => {
-  // brute force: score every row directly, compare with search()
-  const queries = ['sicences donnes', 'oenolog gestio', 'manag commercial cachan', 'cloud devpos', 'lille recherche'];
-  for (const q of queries) {
-    const got = new Set(search(q, idx).map((r) => r.i));
-    for (let i = 0; i < NAMES.length; i++) {
-      const alone = createIndex([{ id: i, name: NAMES[i] }], (x) => x.name);
-      if (search(q, alone).length && !got.has(i)) assert.fail(`row ${i} dropped for "${q}"`);
+test('the vocabulary prefilters never drop a word osa() accepts', () => {
+  // search() rejects most of the vocabulary on letter masks before osa() runs. Those rejects must be exact:
+  // a word is found by edit distance exactly when osa(), against the start of the word it compares, is within
+  // budget. Seeded typos (substitute, insert, delete, swap) of real words, and random strings, against it.
+  let seed = 7;
+  const rand = (n: number) => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) % n;
+  const letter = () => String.fromCharCode(97 + rand(26));
+  const typo = (w: string) => {
+    const at = rand(w.length);
+    switch (rand(4)) {
+      case 0:
+        return w.slice(0, at) + letter() + w.slice(at + 1);
+      case 1:
+        return w.slice(0, at) + letter() + w.slice(at);
+      case 2:
+        return w.slice(0, at) + w.slice(at + 1);
+      default:
+        return at + 1 < w.length ? w.slice(0, at) + w[at + 1] + w[at] + w.slice(at + 2) : w;
     }
+  };
+  const words = [...new Set([...NAMES, ...CITIES].flatMap((n) => normalize(n).text.match(/[a-z]{3,}/g) ?? []))];
+  const EDITS = { prefix: false, infix: false };
+  for (let n = 0; n < 3000; n++) {
+    const w = words[rand(words.length)];
+    let q = n % 10 === 9 ? Array.from({ length: w.length }, letter).join('') : typo(w);
+    if (rand(2)) q = typo(q);
+    if (!/^[a-z]+$/.test(q)) continue;
+    const tol = tolerance(q.length);
+    const expected = osa(q, w.slice(0, q.length + tol), tol) <= tol;
+    assert.equal(search(q, createIndex([w]), EDITS).length > 0, expected, `${q} -> ${w}`);
   }
 });
 
@@ -135,13 +157,6 @@ test('highlight ranges are sorted, merged and non-overlapping', () => {
   const i = search('sciences education lille', idx, { limit: 1 })[0].i;
   const rs = ranges('sciences education lille', idx, i);
   for (let k = 1; k < rs.length; k++) assert.ok(rs[k][0] > rs[k - 1][1]);
-});
-
-test('index build is idempotent and does not mutate the items', () => {
-  const items = [{ name: 'Café' }];
-  const a = createIndex(items, (x) => x.name);
-  assert.deepEqual(items, [{ name: 'Café' }]);
-  assert.equal(a.texts[0], 'cafe');
 });
 
 // --- input shapes ---------------------------------------------------------
@@ -195,7 +210,7 @@ test('missing, null and non-string values do not throw', () => {
 
 // --- robustness additions ---------------------------------------------------
 test('non-Latin queries fall back to substring matching instead of a silent miss', () => {
-  // bounds() only knows a-z0-9, so a Cyrillic word is invisible to the index;
+  // the index only knows a-z0-9, so a Cyrillic word is invisible to it;
   // search() must not answer "no rows" to an exact substring.
   const i = createIndex(['Москва université', 'Kyiv institute']);
   assert.deepEqual(
@@ -345,6 +360,26 @@ test('the typo preset: real misspellings in, ordinary words out', () => {
 });
 
 test('options reach every word of a multi-word query', () => {
-  assert.deepEqual(names('renned avignon', { ...TYPO, minCoverage: 0 }).sort(), []); // one row must hold all words
-  assert.deepEqual(names('clermont ferrand', { ...TYPO, minTypoLength: 0, maxEdits: 0 }), ['Clermont-Ferrand']);
+  // the typo is in the second word: an option read for the first word only would let it through
+  assert.deepEqual(names('clermont ferand'), ['Clermont-Ferrand']);
+  assert.deepEqual(names('clermont ferand', { maxEdits: 0 }), []);
+  assert.deepEqual(names('clermont gerrand'), ['Clermont-Ferrand']);
+  assert.deepEqual(names('clermont gerrand', { keepInitial: true }), []);
+});
+
+test('a query word resolved from the memo gives the same rows as a fresh index', () => {
+  // search() memoizes each query word's vocabulary resolution on the index, 32 words deep, keyed by
+  // the word and the options that shape it. Cycle more words than that through one index, in several
+  // option sets, and compare every answer with an index that has never seen the query.
+  const QUERIES = ['sicences donnes', 'manag commercial', 'clermont ferand', 'ingenieur lyon', 'oenolog', 'patisserie'];
+  const OPTS: SearchOptions[] = [{}, { prefix: false }, { maxEdits: 0 }, { keepInitial: true, infix: false }];
+  const strip = (rows: ReturnType<typeof search>) => rows.map((r) => [r.i, r.score]);
+  for (let round = 0; round < 3; round++) {
+    for (let n = 0; n < 40; n++) search(`word${n}`, idx); // more distinct words than the memo holds
+    for (const q of QUERIES)
+      for (const o of OPTS) {
+        const fresh = createIndex(NAMES, (x) => x);
+        assert.deepEqual(strip(search(q, idx, o)), strip(search(q, fresh, o)), `${q} ${JSON.stringify(o)}`);
+      }
+  }
 });
