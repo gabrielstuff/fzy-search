@@ -1,5 +1,6 @@
-// Type tests: `tsc -p test` must pass, and every `@ts-expect-error` line must still be an error.
-// index.d.ts is hand-written, so this file is what stops it drifting from index.js.
+// Type tests: `vp check` type-checks this file, and every `@ts-expect-error` line must still be an error.
+// dist/index.d.ts is generated from src/index.ts; this file pins the public API it describes, so changing that
+// API is a decision made here, in the diff, and never a side effect of a refactor.
 import {
   createIndex,
   highlight,
