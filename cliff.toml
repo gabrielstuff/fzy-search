@@ -1,0 +1,52 @@
+# Version bump and release notes. `npm run release` and the Release workflow run
+# `--bumped-version` to name the release, `--output CHANGELOG.md` to write the changelog and
+# `--latest --strip all` for the GitHub Release body. Conventional Commits are the input: the
+# PR-title check keeps them well formed, because a squash merge turns the title into the commit.
+# https://git-cliff.org/docs/configuration
+
+[changelog]
+header = "# Changelog\n"
+body = """
+{%- macro repo() -%}https://github.com/gabrielstuff/fzy-search{%- endmacro -%}
+{% if version -%}
+## [{{ version | trim_start_matches(pat="v") }}]({{ self::repo() }}/compare/{{ previous.version }}...{{ version }}) ({{ timestamp | date(format="%Y-%m-%d") }})
+{% else -%}
+## Unreleased
+{% endif -%}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group | striptags | trim }}
+{% for commit in commits %}
+* {% if commit.scope %}**{{ commit.scope }}:** {% endif %}{{ commit.message }} ([{{ commit.id | truncate(length=7, end="") }}]({{ self::repo() }}/commit/{{ commit.id }}))
+{%- endfor %}
+{% endfor %}
+"""
+footer = ""
+trim = true
+postprocessors = [
+  { pattern = '\(#(\d+)\)', replace = "([#${1}](https://github.com/gabrielstuff/fzy-search/pull/${1}))" },
+]
+
+[git]
+conventional_commits = true
+filter_unconventional = true
+split_commits = false
+protect_breaking_commits = true
+tag_pattern = "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+topo_order = false
+sort_commits = "oldest"
+commit_parsers = [
+  # Not release notes: the release commit itself and the work that does not change the package.
+  { message = "^chore(\\(release\\))?: release", skip = true },
+  { message = "^(chore|ci|test|build|deps)", skip = true },
+  { message = "^feat", group = "<!-- 0 -->Features" },
+  { message = "^fix", group = "<!-- 1 -->Bug Fixes" },
+  { message = "^perf", group = "<!-- 2 -->Performance Improvements" },
+  { message = "^revert", group = "<!-- 3 -->Reverts" },
+  { message = "^refactor", group = "<!-- 4 -->Refactoring" },
+  { message = "^docs", group = "<!-- 5 -->Documentation" },
+]
+
+[bump]
+features_always_bump_minor = true
+breaking_always_bump_major = false
+initial_tag = "v0.1.0"

@@ -237,7 +237,7 @@ loudly. Extend `test.js` before touching a constant.
 
 ```sh
 npm test                             # unit tests (Node 18+)
-npm run test:smoke                   # the dependency-free check that runs on Node 14
+npm run test:compat                   # the dependency-free check that runs on Node 14
 npm run check:package                # publint
 npm run check:size                   # the gzipped size, against its budget
 npm run bench                        # speed and relevance of this checkout (installs the contenders first)
@@ -249,8 +249,8 @@ The real benchmark corpora download themselves on first use and cache under
 
 Commits and pull-request titles are [Conventional Commits](https://www.conventionalcommits.org):
 `feat:` ships a minor, `fix:` and `perf:` a patch, `feat!:` a major. Merges are squashes, so the title
-is the commit message, and the changelog and the next version are written from those messages — never
-edit `version` or `CHANGELOG.md` by hand. [AGENTS.md](AGENTS.md) has the rules for working on the code,
+is the commit message, and the changelog and the next version are written from those messages by the
+Release workflow (one click, no release PR) — never edit `version` or `CHANGELOG.md` by hand. [AGENTS.md](AGENTS.md) has the rules for working on the code,
 whether you are a person or a coding agent; [.github/RELEASING.md](.github/RELEASING.md) has the release flow.
 
 ## License

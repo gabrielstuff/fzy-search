@@ -1,6 +1,6 @@
 name: PR title
 
-# Squash merges use the PR title as the commit message, and release-please builds the changelog
+# Squash merges use the PR title as the commit message, and git-cliff builds the changelog
 # and the next version from those messages. A title that is not a Conventional Commit is a
 # release note that never gets written, so the title is checked, not trusted.
 on:

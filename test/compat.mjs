@@ -1,4 +1,4 @@
-// A dependency-free smoke test, for the Node versions test.js cannot run on.
+// A dependency-free compat test, for the Node versions test.js cannot run on.
 //
 // test.js uses `node:test`, which needs Node 18. The package promises `engines.node >=14`, and a
 // promise nobody runs is not one. CI runs this file on the oldest supported Node (and on every
@@ -37,7 +37,7 @@ assert.strictEqual(all.length, 2);
 assert.ok(all[0].score >= all[1].score);
 assert.strictEqual(search('master', index, { limit: 1 }).length, 1);
 
-// the options added in 1.1: defaults are a no-op, each one does one thing
+// the tightening options: defaults are a no-op, each one does one thing
 assert.deepStrictEqual(search('sicences', index, {}), search('sicences', index));
 assert.deepStrictEqual(search('manag', index, { prefix: false, maxEdits: 0 }), []);
 assert.strictEqual(typeof tolerance, 'function');
@@ -54,4 +54,4 @@ assert.ok(ranges('science', index, hit.i).length > 0);
 assert.ok(highlight('science', index, hit.i).includes('<mark>'));
 assert.ok(!highlight('<b>', createIndex(['a <b> c']), 0).includes('<b>'));
 
-console.log(`smoke ok on node ${process.version}`);
+console.log(`compat ok on node ${process.version}`);

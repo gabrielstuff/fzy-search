@@ -1,14 +1,27 @@
 name: Release
 
-# release-please reads the Conventional Commits merged to main, keeps one "chore: release x.y.z"
-# pull request open with the version bump and the CHANGELOG, and when that PR is merged it tags the
-# release. The publish job then pushes that tag to npm.
+# A release is one click: Actions, Release, Run workflow, on main. The version comes from the
+# Conventional Commits since the last tag (git-cliff), or from the `bump` input. Bump, tag and publish
+# are one job on purpose: a tag pushed with GITHUB_TOKEN does not trigger another workflow, so a
+# separate tag-triggered publish job would never run. The same script runs locally: `npm run release`.
 #
-# Publishing uses npm trusted publishing (OIDC): no npm token is stored anywhere, and the package
-# gets a provenance attestation. The npm side is configured once, see .github/RELEASING.md.
+# Nothing reaches the remote until npm has accepted the package: `prepare` commits and tags locally,
+# `push` runs after `npm publish`. Publishing uses npm trusted publishing (OIDC), so no npm token is
+# stored anywhere and the package gets a provenance attestation. The npm side is configured once, see
+# .github/RELEASING.md. The file name (release.yml) and the environment (npm) are bound to that trust:
+# renaming either breaks publishing.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump (auto reads the commits)
+        type: choice
+        options: [auto, patch, minor, major]
+        default: auto
+      dry-run:
+        description: Print the version and the release notes, then stop before publishing
+        type: boolean
+        default: false
 
 permissions: {}
 
@@ -17,48 +30,56 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release-please:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: write
-      issues: write
-      pull-requests: write
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-    steps:
-      - id: release
-        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
-        with:
-          # A pull request opened with the default token does not trigger CI. Set the repository
-          # secret RELEASE_PLEASE_TOKEN (a fine-grained PAT or a GitHub App token with contents and
-          # pull-requests write) to get checks on the release PR; without it, merging still works.
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
-
-  publish:
-    needs: release-please
-    if: ${{ needs.release-please.outputs.release_created == 'true' }}
+  release:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     # The environment can require a reviewer: a release then waits for one click.
     environment: npm
     permissions:
-      contents: read
+      contents: write # push the release commit and the tag, create the GitHub Release
       id-token: write # npm trusted publishing and provenance
+    env:
+      BUMP: ${{ inputs.bump }}
+      DRY_RUN: ${{ inputs.dry-run }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.release-please.outputs.tag_name }}
+          fetch-depth: 0 # git-cliff reads every tag and commit
           persist-credentials: false
       # Trusted publishing needs npm >= 11.5.1 and Node >= 22.14; Node 24 ships a recent enough npm.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 24
-      - run: npm --version
-      # Nothing is installed here: the package has no dependencies, and this job holds the publish credential.
-      - run: npm test
-      - run: npm run test:smoke
-      - run: npm publish --provenance --access public
+      - run: npm ci --ignore-scripts
+      - name: Check the npm version floor
+        run: |
+          npm --version
+          printf '%s\n' 11.5.1 "$(npm --version)" | sort -VC || { echo "::error::npm >= 11.5.1 is needed for trusted publishing"; exit 1; }
+      - name: Commit identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Prepare (version, changelog, commit, tag)
+        run: |
+          args=(--bump "$BUMP")
+          if [ "$DRY_RUN" = true ]; then args+=(--dry-run); fi
+          node scripts/release.mjs prepare "${args[@]}"
+      - if: ${{ !inputs.dry-run }}
+        run: npm test
+      - if: ${{ !inputs.dry-run }}
+        run: npm run test:compat
+      - if: ${{ !inputs.dry-run }}
+        run: npm publish --provenance --access public
+      - name: Push the release commit and the tag
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/release.mjs push --remote "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+      - name: GitHub Release
+        if: ${{ !inputs.dry-run }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="v$(node -p "require('./package.json').version")"
+          gh release create "$tag" --verify-tag --title "$tag" --notes "$(npx --no-install git-cliff --latest --strip all)"
