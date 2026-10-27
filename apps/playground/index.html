@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>fzy-search playground</title>
+    <meta
+      name="description"
+      content="Fuzzy filter and sort for client-side lists. Type with typos, without accents, in any word order: every keystroke searches tens of thousands of rows in a fraction of a millisecond."
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  </head>
+  <body>
+    <header class="top">
+      <a class="brand" href="https://github.com/gabrielstuff/fzy-search">fzy-search</a>
+      <span class="badges">
+        <span class="badge" id="version"></span>
+        <span class="badge" id="size"></span>
+        <span class="badge">0 dependencies</span>
+      </span>
+      <nav class="links">
+        <a href="https://www.npmjs.com/package/fzy-search">npm</a>
+        <a href="https://github.com/gabrielstuff/fzy-search">GitHub</a>
+        <a href="https://github.com/gabrielstuff/fzy-search/blob/main/results.md">Benchmark</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>Type like a hurried human.</h1>
+      <p class="lede">
+        Typos, missing accents, words out of order, a dropped space: every keystroke searches the whole list, in your
+        browser, with nothing but a <span id="size-lede"></span> function.
+      </p>
+
+      <section class="controls" aria-label="Data and mode">
+        <label>
+          List
+          <select id="dataset"></select>
+        </label>
+        <div class="segmented" role="radiogroup" aria-label="Mode">
+          <button type="button" role="radio" data-mode="filter">Filter box</button>
+          <button type="button" role="radio" data-mode="typo">Did you mean?</button>
+        </div>
+      </section>
+
+      <div class="search">
+        <input
+          id="query"
+          type="search"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="Search…"
+          aria-label="Search the list"
+          aria-describedby="stats"
+        />
+      </div>
+
+      <p class="examples" id="examples"></p>
+
+      <div class="status">
+        <p id="stats" aria-live="polite"></p>
+        <svg id="spark" viewBox="0 0 120 24" role="img" aria-label="Latency of your last keystrokes">
+          <polyline fill="none" stroke="currentColor" stroke-width="1.5" points="" />
+        </svg>
+      </div>
+
+      <ol id="results" class="results"></ol>
+
+      <details class="options">
+        <summary>Options</summary>
+        <div class="grid">
+          <label>limit <input type="number" min="1" max="200" step="1" data-opt="limit" /></label>
+          <label><input type="checkbox" data-opt="prefix" /> prefix</label>
+          <label><input type="checkbox" data-opt="infix" /> infix</label>
+          <label><input type="checkbox" data-opt="keepInitial" /> keepInitial</label>
+          <label>
+            maxEdits
+            <select data-opt="maxEdits">
+              <option value="Infinity">by length (0/1/2)</option>
+              <option value="2">2</option>
+              <option value="1">1</option>
+              <option value="0">0, typos off</option>
+            </select>
+          </label>
+          <label>minTypoLength <input type="range" min="0" max="10" step="1" data-opt="minTypoLength" /></label>
+          <label>minCoverage <input type="range" min="0" max="1" step="0.05" data-opt="minCoverage" /></label>
+          <label>minScore <input type="number" step="10" data-opt="minScore" placeholder="-Infinity" /></label>
+        </div>
+      </details>
+
+      <section class="code" aria-label="This search, as code">
+        <div class="code-head">
+          <span>This search, as code</span>
+          <button type="button" id="copy">Copy</button>
+        </div>
+        <pre><code id="snippet"></code></pre>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        <code>npm install fzy-search</code> · <span id="source"></span> · Built with
+        <a href="https://viteplus.dev">Vite+</a>. The page runs the exact <code>dist/</code> that npm ships.
+      </p>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

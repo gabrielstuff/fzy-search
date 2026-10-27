@@ -17,6 +17,7 @@ vp check                        # format (Oxfmt), lint (Oxlint) and type-check (
 vp check --fix                  # the same, fixing what can be fixed
 vp hooks enable                 # opt in: `vp staged` (check --fix on staged files) before each commit
 vp test                         # Vitest, packages/fzy-search/tests
+vp dev                          # the playground on http://localhost:5173/fzy-search/, library source hot-reloaded
 vp run fzy-search#build         # vp pack: dist/index.js + index.d.ts, then publint and attw (cached)
 vp run fzy-search#size          # the gzipped cost of dist/, against the budget and the quoted figures
 vp run fzy-search#docs          # every option and export of dist/index.d.ts is in the readme, llms.txt, the skill
@@ -110,6 +111,7 @@ still vendors one should move to the npm package and send any local change here.
 | `packages/fzy-search/tests/`                                                 | `index.test.ts`, the unit tests (Vitest); `types.test-d.ts`, the public API, type-checked                                                                      |
 | `packages/fzy-search/vite.config.ts`                                         | `pack` (the build), `test`, and the package tasks: build, size, docs, tarball                                                                                  |
 | `packages/fzy-search/README.md`, `llms.txt`, `skills/`                       | what ships with the package: the docs, an API summary for language models, the agent skill                                                                     |
+| `apps/playground/`                                                           | the live demo on GitHub Pages (`.github/workflows/pages.yml`): vanilla TypeScript, `vp dev` hot-reloads the library source, `vp build` runs against `dist/`    |
 | `vite.config.ts`                                                             | workspace-wide format, lint and type-check rules, the pre-commit check, the `ready` task                                                                       |
 | `pnpm-workspace.yaml`                                                        | the workspace, the tool catalog, which dependencies may run install scripts (none)                                                                             |
 | `bench/`, `results.md`                                                       | the benchmark against five alternatives (its own install), and the recorded results                                                                            |

@@ -3,6 +3,13 @@ import { defineConfig } from 'vite-plus';
 // Workspace-wide: format, lint and type-check rules, the commit hook, and the tasks CI runs.
 // Package configs (packages/fzy-search, apps/playground) hold their own build and test settings.
 export default defineConfig({
+  // Bare `vp dev` / `vp build` / `vp preview` at the root mean the playground; `vp pack` means the library.
+  defaultPackage: {
+    dev: './apps/playground',
+    build: './apps/playground',
+    preview: './apps/playground',
+    pack: './packages/fzy-search',
+  },
   fmt: {
     singleQuote: true,
     printWidth: 120,

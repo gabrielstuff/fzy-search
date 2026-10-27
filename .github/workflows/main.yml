@@ -32,6 +32,8 @@ jobs:
       - run: vp run fzy-search#build
       - run: vp run fzy-search#size
       - run: vp run fzy-search#docs
+      # The playground builds against the package: a change that breaks the demo fails here, not on main.
+      - run: vp run playground#build
 
   # The unit tests on the supported LTS lines and the current release. `engines.node` is >=22.
   test:

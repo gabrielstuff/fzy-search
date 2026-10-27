@@ -1,0 +1,14 @@
+{
+  "name": "playground",
+  "private": true,
+  "description": "The fzy-search playground: live search over real and generated lists, every option, timed per keystroke.",
+  "type": "module",
+  "dependencies": {
+    "fzy-search": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vite-plus": "catalog:"
+  }
+}
