@@ -37,7 +37,11 @@ and compare `p50`.
   quotes, the comment density of the file); do not reformat what you did not change.
 - **Define the check, then loop until it passes.** Before you start, name the command that proves the change
   (a test that fails now, a bench number, a size). Run it, fix, run it again; say what you ran and what it said.
-- **Do not cut a release** (`npm run release`, or the Release workflow) unless a maintainer asked.
+- **Do not cut a release** (`npm run release`, or the Release workflow), tag, publish, or touch `version` or
+  `CHANGELOG.md`. Do not raise the size budget or move a score constant on your own.
+- **Keep your judgment.** Pick one option and say why instead of relaying three. A pull request you open is
+  read in full by a human before it is marked ready for review, and the PR template asks them to say AI helped.
+  See [AI_POLICY.md](AI_POLICY.md).
 
 ## Rules that are not negotiable
 
