@@ -6,5 +6,8 @@ dist
 bench/data
 bench/results-*.json
 bench/noise-*.json
+bench/size.json
+bench/scaling.json
+bench/sweep-*.json
 .vite-hooks/_
 .DS_Store
