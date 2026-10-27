@@ -4,3 +4,9 @@ rules:
       # pkg-pr-new publishes previews to pkg.pr.new, not to npm: it has no trusted-publishing mode,
       # and the job holds no credential beyond a read-only token.
       - preview.yml
+  dangerous-triggers:
+    ignore:
+      # The size comment needs a write token on pull requests from forks, which only workflow_run
+      # gives. It never checks out or runs the pull request: it reads two integers from an artifact
+      # that scripts/size-comment.mjs validates. Keep it that way.
+      - size-comment.yml
