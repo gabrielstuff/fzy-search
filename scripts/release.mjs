@@ -80,7 +80,6 @@ function push() {
 if (phase !== 'push') prepare();
 if (phase === 'all' && !dryRun) {
   run('npm', ['test'], { stdio: 'inherit' });
-  run('npm', ['run', 'test:compat'], { stdio: 'inherit' });
   run('npm', ['publish', '--provenance', '--access', 'public'], { stdio: 'inherit' });
 }
 if (phase !== 'prepare' && !dryRun) push();

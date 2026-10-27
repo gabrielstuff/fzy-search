@@ -7,12 +7,11 @@ The README is the user documentation; this file is what you need to change the c
 ## Commands
 
 ```sh
-npm test                 # test.js, node:test, Node >= 18
-npm run test:compat      # test/compat.mjs: dependency-free, runs on the oldest supported Node
+npm test                 # test.js, node:test, Node >= 22
 npm run check:package    # publint and attw: exports, types, files
 npm run check:types      # tsc over test/types.test-d.ts: index.d.ts cannot drift from index.js
 node scripts/test-tarball.mjs   # pack, install the tarball in an empty project, import every export
-bun test/compat.mjs      # the compat test on Bun; Deno: deno run --unstable-bare-node-builtins test/compat.mjs
+bun test ./test.js       # the same suite on Bun; Deno: deno test test.js
 npm run check:docs       # every option and export of index.d.ts is in the skill, llms.txt and the readme
 npm run lint             # oxlint, correctness rules only (no formatter)
 npm run check:size       # gzipped bundle cost against the budget in scripts/size.mjs
@@ -22,7 +21,7 @@ ONLY=fzy node --expose-gc bench/run.js synthetic   # speed and relevance of this
 npm ci --prefix bench --ignore-scripts             # first, once: the benchmark contenders
 ```
 
-Before you call a change done: `npm test`, `npm run test:compat`, `npm run check:package`,
+Before you call a change done: `npm test`, `npm run check:package`,
 `npm run check:types`, `npm run check:docs`, `npm run lint`, `npm run check:size`. If you touched
 `search()`, `vocabHits()` or `wordScore()`, also run the bench above on this checkout and on `main`
 and compare `p50`.
@@ -63,10 +62,11 @@ and compare `p50`.
 
 ## Node versions
 
-`engines.node` is `>=14`. The ceiling on syntax is ES2020 (`??` and `?.` are in; `??=`, `.at()`,
-`Object.hasOwn`, `structuredClone` are out), and `index.js` imports nothing, not even `node:` modules.
-`test.js` needs Node 18 (`node:test`), so the floor is enforced by `test/compat.mjs` in CI on Node 14 and
-16: keep that file free of anything newer. Raising the floor is a breaking change: a `feat!:` commit.
+`engines.node` is `>=22`: the LTS lines still supported (22 and 24) and the current release (26) run the
+suite in CI, and Bun and Deno run the same `test.js`. The ceiling on *syntax* stays ES2020 (`??` and `?.`
+are in; `??=`, `.at()`, `Object.hasOwn`, `structuredClone` are out), because `index.js` ships to browsers
+and bundlers as written, and it imports nothing, not even `node:` modules. Raising the floor is a breaking
+change: a `feat!:` commit.
 
 ## Commits, versions, releases
 
@@ -92,7 +92,6 @@ README. Do not edit the copy: the next copy silently reverts the edit. Send the 
 | --- | --- |
 | `index.js`, `index.d.ts` | the library, in reading order: normalize, osa, index, wordScore, vocabHits, search, highlight |
 | `test.js` | the unit tests, `node:test` |
-| `test/compat.mjs` | the Node-14-compatible compat test |
 | `scripts/size.mjs` | bundle size and its budget |
 | `bench/` | the benchmark against five alternatives; its own `package.json` |
 | `results.md` | the recorded benchmark results, including the ones that do not flatter the library |

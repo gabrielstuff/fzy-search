@@ -19,11 +19,10 @@
 	},
 	"sideEffects": false,
 	"engines": {
-		"node": ">=14"
+		"node": ">=22"
 	},
 	"scripts": {
 		"test": "node --test test.js",
-		"test:compat": "node test/compat.mjs",
 		"check:types": "tsc -p test",
 		"check:package": "publint && attw --pack . --profile esm-only",
 		"check:size": "node scripts/size.mjs",

@@ -4,7 +4,7 @@
 
 ## Checked
 
-- [ ] `npm test`, `npm run test:compat`, `npm run check:package` and `npm run check:size` pass
+- [ ] `npm test`, `npm run check:package` and `npm run check:size` pass
 - [ ] A new option or behaviour has a test, and the defaults are unchanged (or this is marked breaking)
 - [ ] If `search()`, `vocabHits()` or `wordScore()` changed: bench before and after (see AGENTS.md), numbers below
 - [ ] If the gzipped size grew: the budget in `scripts/size.mjs`, the readme and `package.json` say the same thing

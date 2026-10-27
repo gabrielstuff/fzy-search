@@ -68,8 +68,6 @@ jobs:
       - if: ${{ !inputs.dry-run }}
         run: npm test
       - if: ${{ !inputs.dry-run }}
-        run: npm run test:compat
-      - if: ${{ !inputs.dry-run }}
         run: npm publish --provenance --access public
       - name: Push the release commit and the tag
         if: ${{ !inputs.dry-run }}
