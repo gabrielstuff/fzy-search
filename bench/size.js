@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { adapters } from './adapters.js';
 const ADAPTERS = adapters();
 
+// The entries are written next to bench/node_modules, so the contenders resolve from any working directory.
 const dir = mkdtempSync(join(import.meta.dirname, '.size-'));
 const rows = [];
 for (const a of ADAPTERS) {

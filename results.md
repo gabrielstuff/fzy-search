@@ -1,6 +1,6 @@
 # Benchmark results
 
-Evidence behind the comparison table in [readme.md](readme.md).
+Evidence behind the comparison table in the [package README](packages/fzy-search/README.md#comparison).
 
 This file is the reading: what is measured, how, and the caveats. The numbers below
 were taken on a 2 vCPU runner, before the perf work of October 2026, and are kept as
@@ -53,11 +53,11 @@ below that matters is decided on the real corpora.
 
 Each library bundled alone with only the entry points a search box needs; for
 fzy-search that is `createIndex` + `search`. Adding `highlight` brings it to
-2.9 kB gzip.
+3.0 kB gzip.
 
 | library | min | **gzip** | brotli |
 |---|---|---|---|
-| **fzy-search** | 4.9 kB | **2.4 kB** | 2.2 kB |
+| **fzy-search** | 5.4 kB | **2.6 kB** | 2.4 kB |
 | match-sorter | 8.8 kB | 3.3 kB | 2.6 kB |
 | MiniSearch | 17.3 kB | 5.7 kB | 5.2 kB |
 | fuzzysort | 20.6 kB | 8.2 kB | 7.5 kB |
