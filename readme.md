@@ -23,7 +23,7 @@ All the numbers, including the ones that do not flatter it, are in
 npm install fzy-search
 ```
 
-Node 14 or later, and any bundler or browser that reads ES2020. ESM only. Every pull request
+Node 22 or later, Bun, Deno, and any bundler or browser that reads ES2020. ESM only. Every pull request
 also gets a preview build, so an unreleased change can be tried before it ships; the install
 command is in a comment on the PR ([pkg.pr.new](https://pkg.pr.new)).
 
@@ -236,8 +236,7 @@ budget, the input shapes and the vocabulary prefilter each have a test that fail
 loudly. Extend `test.js` before touching a constant.
 
 ```sh
-npm test                             # unit tests (Node 18+)
-npm run test:compat                   # the dependency-free check that runs on Node 14
+npm test                             # unit tests (node:test, also run on Bun and Deno in CI)
 npm run check:package                # publint
 npm run check:size                   # the gzipped size, against its budget
 npm run bench                        # speed and relevance of this checkout (installs the contenders first)

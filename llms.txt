@@ -1,6 +1,6 @@
 # fzy-search
 
-> Fuzzy filter and sort for client-side lists. One file of dependency-free JavaScript (ESM), about 2.6 kB gzipped, Node >= 14 and browsers. Folds accents and ligatures, counts a transposition as one edit, scales the edit budget to word length, ignores word order, and requires every query word to match. Built for a search box over a few thousand to a hundred thousand rows already in memory.
+> Fuzzy filter and sort for client-side lists. One file of dependency-free JavaScript (ESM), about 2.6 kB gzipped, Node >= 22, Bun, Deno and browsers. Folds accents and ligatures, counts a transposition as one edit, scales the edit budget to word length, ignores word order, and requires every query word to match. Built for a search box over a few thousand to a hundred thousand rows already in memory.
 
 Install: `npm install fzy-search`. Unreleased changes: every pull request has a preview build on pkg.pr.new, see the comment on the PR.
 
